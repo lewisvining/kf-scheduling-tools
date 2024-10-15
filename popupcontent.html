@@ -1,0 +1,11 @@
+<!-- popupContent.html hosted on GitHub -->
+<h2>Engineer Manager</h2>
+<button id="copyNamesButton">Copy Booked Engineer Names</button>
+<p id="statusMessage"></p>
+<script>
+  // This script will now work within the dynamically loaded content
+  document.getElementById('copyNamesButton').addEventListener('click', function() {
+    document.getElementById('statusMessage').textContent = 'Engineer names copied!';
+    // Add the script or function to actually copy names here
+  });
+</script>
