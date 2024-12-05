@@ -1,32 +1,23 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to unhide the correct element based on the current page's URL
     function checkPageUrl() {
-        // Query the active tab in the current window
         chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
             const currentTab = tabs[0];
             const currentUrl = currentTab.url;
 
-            // The scheduling page URL to match
             const schedulingUrlPattern = /^https:\/\/field\.oes-prod\.energy\/scheduling.*/;
 
-            // Check if the current URL matches the scheduling page pattern
             if (schedulingUrlPattern.test(currentUrl)) {
-                // If the URL matches, unhide the scheduling page div
                 document.getElementById('schedulingpage').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
             } else {
-                // Otherwise, unhide the error div
                 document.getElementById('error').style.display = 'block';
                 document.getElementById('schedulingpage').style.display = 'none';
             }
         });
     }
-
-    // Run the checkPageUrl function when the popup is loaded
     checkPageUrl();
 });
 
-// Function to trigger copying all booked engineers
 document.getElementById("copyAllBookedEngineerNames").addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.scripting.executeScript({
@@ -56,7 +47,6 @@ document.getElementById("copyAllBookedEngineerNames").addEventListener("click", 
                         ) {
                             engineerNamesSet.add(name);
                             hasUnattended = true;
-                            //identifiedEngineersCount++;
                         }
                     });
                     if (hasUnattended) {
@@ -67,7 +57,6 @@ document.getElementById("copyAllBookedEngineerNames").addEventListener("click", 
                 const engineerNamesArray = Array.from(engineerNamesSet);
                 const namesText = engineerNamesArray.join('\n');
 
-                // Fallback mechanism for clipboard copy if navigator.clipboard.writeText fails
                 function copyToClipboardFallback(text) {
                     const tempTextArea = document.createElement('textarea');
                     tempTextArea.value = text;
@@ -77,26 +66,13 @@ document.getElementById("copyAllBookedEngineerNames").addEventListener("click", 
                     document.body.removeChild(tempTextArea);
                 }
 
-                copyToClipboardFallback(namesText);  // Fallback in case of error
+                copyToClipboardFallback(namesText); 
                 alert(`${identifiedEngineersCount} engineer(s) copied.`);
-
-                // Try navigator.clipboard.writeText; fallback to execCommand if it fails
-                //navigator.clipboard.writeText(namesText)
-                //    .then(() => {
-                //        console.log('Engineer names copied:', engineerNamesArray);
-                //        alert(`${identifiedEngineersCount} engineer(s) copied.`);
-                //    })
-                //    .catch((err) => {
-                //        console.error('Failed to copy engineer names:', err);
-                //        copyToClipboardFallback(namesText);  // Fallback in case of error
-                //        alert(`${identifiedEngineersCount} engineer(s) copied (fallback).`);
-                //    });
             }
         });
     });
 });
 
-// Function to trigger copying engineers based on time period (AM/PM)
 function copyBookedEngineerNamesByTime(timePeriod) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.scripting.executeScript({
@@ -146,37 +122,31 @@ function copyBookedEngineerNamesByTime(timePeriod) {
                         
                         engineerAppointments.forEach(appointment => {
                             if (appointment.job.includes("EV ") || appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
-                                //console.log(engineerNameElement.textContent.trim() + " excluded for LCT");  // If any LCT job is found, log "LCT" and return early
                                 containsLCT = true;
                                 return;  // Skip further checks for this appointment
                             }
 
-                            // Loop through the appointment details to assess the "unattended" status and "slot" field
                             engineerAppointments.forEach(appointment => {
                                 if (appointment.attended === false && appointment.slot === timePeriod) {
-                                    hasUnattendedAM = true;  // Set flag if unattended and matches timePeriod
+                                    hasUnattendedAM = true;  
                                 }
                                 
                                 if (appointment.attended === true) {
-                                    engineerNonStarter = false;  // Mark that there are some true unattended appointments
+                                    engineerNonStarter = false;  
                                 }
 
                                 if (appointment.attended === false && (appointment.slot === "AM" || appointment.slot === "AD")) {
-                                    onlyPM = false;  // not a non starter if PM appointment is assigned
+                                    onlyPM = false;
                                 }
                             });
                         });
 
-                        //console.table(engineerAppointments);
-
                         if (engineerNonStarter && !containsLCT && !onlyPM) {
                             identifiedEngineersCount++;
                             engineerNamesSet.add(engineerNameElement.textContent.trim() + " [NON STARTER]");
-                            //console.log(engineerNameElement.textContent.trim() + " NON STARTER");
                         } else if (hasUnattendedAM && !containsLCT) {
                             identifiedEngineersCount++;
                             engineerNamesSet.add(engineerNameElement.textContent.trim());
-                            //console.log(engineerNameElement.textContent.trim() + " Unattended AM");
                         }
 
                     } else{
@@ -187,7 +157,6 @@ function copyBookedEngineerNamesByTime(timePeriod) {
                 const engineerNamesArray = Array.from(engineerNamesSet);
                 const namesText = engineerNamesArray.join('\n');
 
-                // Fallback mechanism for clipboard copy if navigator.clipboard.writeText fails
                 function copyToClipboardFallback(text) {
                     const tempTextArea = document.createElement('textarea');
                     tempTextArea.value = text;
@@ -199,19 +168,7 @@ function copyBookedEngineerNamesByTime(timePeriod) {
 
                 copyToClipboardFallback(namesText);  // Fallback in case of error
                 alert(`${identifiedEngineersCount} engineer(s) copied with unattended ${timePeriod} appointments.`);
-                console.log(`${identifiedEngineersCount} engineer(s) copied with unattended ${timePeriod} appointments.`);
-
-                // Try navigator.clipboard.writeText; fallback to execCommand if it fails
-                //navigator.clipboard.writeText(namesText)
-                //    .then(() => {
-                //        console.log(`Engineer names for ${timePeriod} copied:`, engineerNamesArray);
-                //        alert(`${identifiedEngineersCount} engineer(s) copied for ${timePeriod}.`);
-                //    })
-                //    .catch((err) => {
-                //        console.error(`Failed to copy engineer names for ${timePeriod}:`, err);
-                //        copyToClipboardFallback(namesText);  // Fallback in case of error
-                //        alert(`${identifiedEngineersCount} engineer(s) copied for ${timePeriod} (fallback).`);
-                //    });
+                //console.log(`${identifiedEngineersCount} engineer(s) copied with unattended ${timePeriod} appointments.`);
             },
             args: [timePeriod]
         });
@@ -299,6 +256,109 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
     });
 });
 
+document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: () => {
+                const bookedBackgroundCSS = "rgb(245, 239, 253)";
+                const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                const abortedBackgroundCSS = "rgb(233, 233, 236)";
+                const matchingPattern = /^J-[A-Z0-9]{8}$/; // Regex for "J-" followed by 8 alphanumeric characters
+                const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i; // Strict regex for UK postcodes
+                const excludedKeywords = ["heat pump ", "solar ", "ev "];
+                const jobIdsSet = new Set();
+                let identifiedJobCount = 0;
+
+                const engineers = document.querySelectorAll('li[data-engineer-row]');
+                engineers.forEach((engineerElement) => {
+                    const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                    
+                    const excludedPostcodes = [];
+                    //console.log("Processing engineer...");
+
+                    appointmentCards.forEach((appointmentCard) => {
+                        const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                        const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                        const jobTitle = jobTitleElement?.textContent.trim().toLowerCase() || "";
+
+                        let jobPostcode = "";
+                        const pElements = appointmentCard.querySelectorAll('p');
+                        
+                        // Find the postcode in <p> elements
+                        pElements.forEach((pElement) => {
+                            const pText = pElement.textContent.trim();
+                            if (postcodeRegex.test(pText)) {
+                                jobPostcode = pText; // Save the strictly matched postcode
+                                //console.log(`Found postcode: ${jobPostcode}`);
+                            }
+                        });
+
+                        console.log("Card details:", { jobTitle, jobPostcode, cardBackgroundColor });
+
+                        // Exclusion for on site reraises - assumed when an aborted appointment matches postcode of booked
+                        if (cardBackgroundColor === abortedBackgroundCSS) {
+                            if (jobPostcode) {
+                                //console.log(`Adding postcode ${jobPostcode} to excluded list due to aborted status.`);
+                                excludedPostcodes.push(jobPostcode);
+                            }
+                            return; // Skip processing this card
+                        }
+
+                        // Exclusion for LCT jobs & log postcode to ignore NBSI's and on site raises
+                        if (excludedKeywords.some(keyword => jobTitle.includes(keyword))) {
+                            if (jobPostcode) {
+                                console.log(`Excluding postcode ${jobPostcode} due to title: "${jobTitle}"`);
+                                excludedPostcodes.push(jobPostcode);
+                            }
+                            return; // Skip processing this card
+                        }
+
+                        // Skip cards with postcodes in the excluded list (nbsis & onsite reraises)
+                        if (excludedPostcodes.includes(jobPostcode)) {
+                            console.log(`Skipping job with postcode ${jobPostcode} as it's in the excluded list.`);
+                            return;
+                        }
+
+                        // Process valid cards
+                        if (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) {
+                            pElements.forEach((pElement) => {
+                                const textContent = pElement.textContent.trim();
+                                if (matchingPattern.test(textContent)) {
+                                    console.log(`Adding job ID: ${textContent}`);
+                                    jobIdsSet.add(textContent);
+                                    identifiedJobCount++;
+                                }
+                            });
+                        }
+                    });
+
+                    console.log("Excluded postcodes for this engineer:", excludedPostcodes);
+                });
+
+                const jobIdsArray = Array.from(jobIdsSet);
+                const jobIdsText = jobIdsArray.join('\n');
+
+                if (jobIdsArray.length === 0) {
+                    alert("No matching job IDs found.");
+                    return;
+                }
+
+                function copyToClipboardFallback(text) {
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = text;
+                    document.body.appendChild(tempTextArea);
+                    tempTextArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempTextArea);
+                }
+
+                copyToClipboardFallback(jobIdsText);
+                alert(`${identifiedJobCount} unattended job references copied.`);
+            }
+        });
+    });
+});
 
 
 // AM button event listener
@@ -309,7 +369,3 @@ document.getElementById("copyBookedEngineerNamesByTimeAM").addEventListener("cli
 
 const myModal = document.getElementById('myModal')
 const myInput = document.getElementById('myInput')
-
-myModal.addEventListener('shown.bs.modal', () => {
-  myInput.focus()
-})
