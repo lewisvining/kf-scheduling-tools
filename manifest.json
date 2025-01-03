@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Kraken Field Scheduling Tools",
-    "version": "1.4",
+    "version": "1.5",
     "description": "@lewis.vining",
     "permissions": [
       "storage",
@@ -10,7 +10,8 @@
       "clipboardWrite"
     ],
     "host_permissions": [
-      "*://*/*" 
+      "*://*/*",
+      "https://raw.githubusercontent.com/*"
     ],
     "background": {
       "service_worker": "background.js" 

@@ -1,4 +1,36 @@
+function compareVersions(v1, v2) {
+    const parseVersion = (version) => version.split('.').map(Number);
+    const [major1, minor1, patch1] = parseVersion(v1);
+    const [major2, minor2, patch2] = parseVersion(v2);
+
+    if (major1 !== major2) return major1 - major2;
+    if (minor1 !== minor2) return minor1 - minor2;
+    return patch1 - patch2;
+}
 document.addEventListener('DOMContentLoaded', function() {
+    fetch('https://raw.githubusercontent.com/lewisvining/kf-scheduling-tools/refs/heads/main/manifest.json')
+    .then(response => response.json())
+    .then(remoteManifest => {
+        const remoteVersion = remoteManifest.version;
+        const currentVersion = chrome.runtime.getManifest().version;
+        document.getElementById('versionsup').textContent = "v" + currentVersion;
+
+        if (currentVersion !== remoteVersion) {
+            const comparison = compareVersions(currentVersion, remoteVersion);
+            if (comparison > 0) {
+                // Current version is newer
+                document.getElementById('versionNotice').textContent = 'Experimental';
+                versionNotice.style.fontStyle = 'italic';
+                document.getElementById('versionNotice').style.display = 'block';
+            } else if (comparison < 0) {
+                // Current version is older
+                document.getElementById('versionNotice').style.display = 'block';
+            }
+            console.log(`Version mismatch: installed(${currentVersion}), remote(${remoteVersion})`);
+        }
+    })
+    .catch(error => console.error('Error fetching remote manifest:', error));
+
     function checkPageUrl() {
         chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
             const currentTab = tabs[0];
@@ -7,15 +39,69 @@ document.addEventListener('DOMContentLoaded', function() {
             const schedulingUrlPattern = /^https:\/\/field\.oes-prod\.energy\/scheduling.*/;
 
             if (schedulingUrlPattern.test(currentUrl)) {
-                document.getElementById('schedulingpage').style.display = 'block';
+                const modeSelect = document.getElementById("modeSelect");
+                const modeDisplay = document.getElementById("kfstmodepill");
+                // Load saved mode from storage and update span
+                chrome.storage.sync.get("kfstMode", (data) => {
+                    const savedMode = data.kfstMode || "metering"; // Default to "Metering" if nothing is saved
+
+                    modeSelect.value = savedMode;
+                    if (savedMode === "metering") {
+                        modeDisplay.textContent = "Metering";
+                    } else if (savedMode === "ev_chargers") {
+                        modeDisplay.textContent = "EV Chargers";
+                    }
+
+                    if (savedMode == "metering") {
+                        document.getElementById('schedulingpageM').style.display = 'block';
+                        document.getElementById('schedulingpageEV').style.display = 'none';
+                    }   else if (savedMode == "ev_chargers") {
+                        document.getElementById('schedulingpageM').style.display = 'none';
+                        document.getElementById('schedulingpageEV').style.display = 'block';
+                    }
+                });
+                
                 document.getElementById('error').style.display = 'none';
+                if (currentUrl.includes("companies=OES")) {
+                    //NBSIbutton.classList.add("btn-outline-primary");
+                    //NBSIbutton.classList.remove("btn-outline-secondary", "disabled");
+                  } else {
+                    //NBSIbutton.classList.add("btn-outline-secondary", "disabled");
+                    //NBSIbutton.classList.remove("btn-outline-primary");
+                    //const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                  }
             } else {
                 document.getElementById('error').style.display = 'block';
+                document.getElementById('openSettings').style.display = 'none';
                 document.getElementById('schedulingpage').style.display = 'none';
             }
         });
     }
     checkPageUrl();
+
+    // Update storage and span when the mode is changed
+    modeSelect.addEventListener("change", () => {
+        const selectedMode = modeSelect.value;
+        const modeDisplay = document.getElementById("kfstmodepill");
+        chrome.storage.sync.set({ kfstMode: selectedMode }, () => {
+            console.log(`Mode set to: ${selectedMode}`);
+            if (selectedMode == "metering") {
+                document.getElementById('schedulingpageM').style.display = 'block';
+                document.getElementById('schedulingpageEV').style.display = 'none';
+            }   else if (selectedMode == "ev_chargers") {
+                document.getElementById('schedulingpageM').style.display = 'none';
+                document.getElementById('schedulingpageEV').style.display = 'block';
+            }
+        });
+
+        if (selectedMode === "metering") {
+            modeDisplay.textContent = "Metering";
+        } else if (selectedMode === "ev_chargers") {
+            modeDisplay.textContent = "EV Chargers";
+        }
+    });
+    
 });
 
 document.getElementById("copyAllBookedEngineerNames").addEventListener("click", () => {
@@ -73,13 +159,14 @@ document.getElementById("copyAllBookedEngineerNames").addEventListener("click", 
     });
 });
 
-function copyBookedEngineerNamesByTime(timePeriod) {
+function amChase(extensionMode) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
-            func: (timePeriod) => {
+            func: (extensionMode) => {
                 const bookedBackgroundCSS = "rgb(245, 239, 253)";
                 const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                const abortedBackgroundCSS = "rgb(233, 233, 236)";
                 const engineerNamesSet = new Set();
                 let identifiedEngineersCount = 0;
 
@@ -97,20 +184,32 @@ function copyBookedEngineerNamesByTime(timePeriod) {
                             const jobTitle = jobTitleElement?.textContent.trim();
                         
                             if (
-                                engineerNameElement.textContent.trim() && jobTitle &&
-                                (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS)) {
+                                engineerNameElement.textContent.trim() &&
+                                jobTitle &&
+                                (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS)
+                            ) {
                                 engineerAppointments.push({
                                     eng: engineerNameElement.textContent.trim(),
                                     job: jobTitle,
                                     slot: appointmentTimeSlot,
-                                    attended: false
+                                    attended: false,
+                                    aborted: false,
+                                });
+                            } else if (cardBackgroundColor === abortedBackgroundCSS) {
+                                engineerAppointments.push({
+                                    eng: engineerNameElement.textContent.trim(),
+                                    job: jobTitle,
+                                    slot: appointmentTimeSlot,
+                                    attended: true,
+                                    aborted: true,
                                 });
                             } else {
                                 engineerAppointments.push({
                                     eng: engineerNameElement.textContent.trim(),
                                     job: jobTitle,
                                     slot: appointmentTimeSlot,
-                                    attended: true
+                                    attended: true,
+                                    aborted: false,
                                 });
                             }
                         });
@@ -118,36 +217,78 @@ function copyBookedEngineerNamesByTime(timePeriod) {
                         let containsLCT = false;
                         let engineerNonStarter = true;
                         let hasUnattendedAM = false;
+                        let hasAbortedEV = false;
                         let onlyPM = true;
-                        
-                        engineerAppointments.forEach(appointment => {
-                            if (appointment.job.includes("EV ") || appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
-                                containsLCT = true;
-                                return;  // Skip further checks for this appointment
-                            }
 
+                        if (extensionMode == "metering") {
                             engineerAppointments.forEach(appointment => {
-                                if (appointment.attended === false && appointment.slot === timePeriod) {
-                                    hasUnattendedAM = true;  
+                                if (appointment.job.includes("EV ") || appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
+                                    containsLCT = true;
+                                    return;  // Skip further checks for this appointment
                                 }
                                 
-                                if (appointment.attended === true) {
-                                    engineerNonStarter = false;  
-                                }
-
-                                if (appointment.attended === false && (appointment.slot === "AM" || appointment.slot === "AD")) {
-                                    onlyPM = false;
-                                }
+                                engineerAppointments.forEach(appointment => {
+                                    if (appointment.attended === false && appointment.slot === "AM") {
+                                        hasUnattendedAM = true;  
+                                    }
+                                    
+                                    if (appointment.attended === true) {
+                                        engineerNonStarter = false;  
+                                    }
+    
+                                    if (appointment.attended === false && (appointment.slot === "AM" || appointment.slot === "AD")) {
+                                        onlyPM = false;
+                                    }
+                                });
                             });
-                        });
+    
+                            if (engineerNonStarter && !containsLCT && !onlyPM) {
+                                identifiedEngineersCount++;
+                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [NON STARTER]");
+                            } else if (hasUnattendedAM && !containsLCT) {
+                                identifiedEngineersCount++;
+                                engineerNamesSet.add(engineerNameElement.textContent.trim());
+                            }
+                        } else if (extensionMode === "ev_chargers") {
+                            for (let appointment of engineerAppointments) {
+                                if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
+                                    containsLCT = true;
+                                    break; // contains HP or Solar, so exit the outer loop
+                                }
+                                //console.table(appointment);
+                                for (let appointment of engineerAppointments) {
+                                    if (appointment.job.includes("EV ") && appointment.attended && !appointment.aborted) {
+                                        engineerNonStarter = false; // Engineer has started a second EV job on timeline
+                                        break; // Exit the outer loop
+                                    }
 
-                        if (engineerNonStarter && !containsLCT && !onlyPM) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + " [NON STARTER]");
-                        } else if (hasUnattendedAM && !containsLCT) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim());
+                                    if (appointment.attended && !appointment.aborted) {
+                                        engineerNonStarter = false; // Has an attended job, exit
+                                        break; // Exit the outer loop
+                                    } else if (appointment.job.includes("EV ") && !appointment.attended && !appointment.aborted) {
+                                        engineerNonStarter = true;
+                                    } else if (!appointment.attended && appointment.slot === "AM") {
+                                        hasUnattendedAM = true; // Unattended metering AM
+                                    } else if (appointment.job.includes("EV ") && appointment.aborted){
+                                        hasAbortedEV = true;
+                                        engineerNonStarter = false;
+                                    }
+                                }
+                            }                            
+    
+                            if (engineerNonStarter && !containsLCT) {
+                                identifiedEngineersCount++;
+                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [EV Non-Starter]");
+                            } else if (hasUnattendedAM && !containsLCT) {
+                                identifiedEngineersCount++;
+                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Outstanding AM]");
+                            } else if (hasAbortedEV && !containsLCT) {
+                                identifiedEngineersCount++;
+                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Aborted EV - Available for Jeopardy]");
+                            }
                         }
+                        
+                        
 
                     } else{
                         //console.log(engineerNameElement.textContent.trim() + " has no jobs assigned.");
@@ -167,13 +308,132 @@ function copyBookedEngineerNamesByTime(timePeriod) {
                 }
 
                 copyToClipboardFallback(namesText);  // Fallback in case of error
-                alert(`${identifiedEngineersCount} engineer(s) copied with unattended ${timePeriod} appointments.`);
-                //console.log(`${identifiedEngineersCount} engineer(s) copied with unattended ${timePeriod} appointments.`);
+                if (extensionMode == "metering") {
+                    alert(`${identifiedEngineersCount} engineer(s) copied with unattended AM metering appointments.`);
+                    //console.lo g(`${identifiedEngineersCount} engineer(s) copied with unattended ${extensionMode} appointments.`);
+                } else if (extensionMode == "ev_chargers") {
+                    alert(`${identifiedEngineersCount} EV engineer(s) copied with unattended or aborted appointments.`);
+                }
             },
-            args: [timePeriod]
+            args: [extensionMode]
         });
     });
 }
+
+document.getElementById("copyEngineerPM_ev").addEventListener("click", () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: () => {
+                const bookedBackgroundCSS = "rgb(245, 239, 253)";
+                const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                const inprogressBackgroundCSS = "rgb(229, 246, 254)";
+                const enrouteBackgroundCSS = "rgb(255, 249, 238)";
+                const engineerNamesSet = new Set();
+                let identifiedEngineersCount = 0;
+
+                const engineers = document.querySelectorAll('li[data-engineer-row]');
+                engineers.forEach((engineerElement) => {
+                    const engineerNameElement = engineerElement.querySelector('h6, [data-testid="engineer-name"]');
+                    const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                    let engineerAppointments = [];
+
+                    if (appointmentCards.length > 0) {
+                        appointmentCards.forEach((appointmentCard) => {
+                            const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                            const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                            const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
+                            const jobTitle = jobTitleElement?.textContent.trim();
+                        
+                            if (
+                                engineerNameElement.textContent.trim() &&
+                                jobTitle &&
+                                (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS)
+                            ) {
+                                engineerAppointments.push({
+                                    eng: engineerNameElement.textContent.trim(),
+                                    job: jobTitle,
+                                    slot: appointmentTimeSlot,
+                                    status: "unattended",
+                                });
+                            } else if (cardBackgroundColor === inprogressBackgroundCSS) {
+                                engineerAppointments.push({
+                                    eng: engineerNameElement.textContent.trim(),
+                                    job: jobTitle,
+                                    slot: appointmentTimeSlot,
+                                    status: "incomplete",
+                                });
+                            } else if (cardBackgroundColor === enrouteBackgroundCSS) {
+                                engineerAppointments.push({
+                                    eng: engineerNameElement.textContent.trim(),
+                                    job: jobTitle,
+                                    slot: appointmentTimeSlot,
+                                    status: "enroute",
+                                });
+                            } 
+                            else {
+                                engineerAppointments.push({
+                                    eng: engineerNameElement.textContent.trim(),
+                                    job: jobTitle,
+                                    slot: appointmentTimeSlot,
+                                    status: "complete",
+                                });
+                            }
+                        });
+
+                        let containsLCT = false;
+                        let hasEnRouteEV = false;
+                        let hasIncompleteEV = false;
+                        let hasUnattendedEV = false;
+
+                        for (let appointment of engineerAppointments) {
+                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
+                                containsLCT = true;
+                                break; // contains HP or Solar, so exit the outer loop
+                            }
+                            for (let appointment of engineerAppointments) {
+                                if (appointment.job.includes("EV ") && appointment.status === "unattended") {
+                                    hasUnattendedEV = true; // Has an unattended job, exit
+                                    break; // Exit the outer loop
+                                } else if (appointment.job.includes("EV ") && appointment.status === "incomplete") {
+                                    hasIncompleteEV = true;
+                                } else if (appointment.job.includes("EV ") && appointment.status === "enroute") {
+                                    hasEnRouteEV = true;
+                                }
+                            }
+                        }                            
+
+                        if (hasUnattendedEV && !containsLCT) {
+                            identifiedEngineersCount++;
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Unattended EV Job]");
+                        } else if (hasIncompleteEV && !containsLCT) {
+                            identifiedEngineersCount++;
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Incomplete EV Job]");
+                        } else if (hasEnRouteEV && !containsLCT) {
+                            identifiedEngineersCount++;
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + " [En-Route EV Job]");
+                        }
+                    }
+                });
+
+                const engineerNamesArray = Array.from(engineerNamesSet);
+                const namesText = engineerNamesArray.join('\n');
+
+                function copyToClipboardFallback(text) {
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = text;
+                    document.body.appendChild(tempTextArea);
+                    tempTextArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempTextArea);
+                }
+
+                copyToClipboardFallback(namesText);  // Fallback in case of error
+                alert(`${identifiedEngineersCount} EV engineer(s) copied with incomplete or aborted appointments.`);
+            },
+        });
+    });
+});
 
 document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
     event.preventDefault(); // Prevent form from refreshing page
@@ -229,7 +489,7 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                 });
 
                 if (jobsData.length === 0) {
-                    alert("No jobs found matching the selected criteria.");
+                    alert("No jobs found in the scheduling window.");
                     return;
                 }
 
@@ -264,7 +524,7 @@ document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
                 const bookedBackgroundCSS = "rgb(245, 239, 253)";
                 const priorityBackgroundCSS = "rgb(249, 196, 251)";
                 const abortedBackgroundCSS = "rgb(233, 233, 236)";
-                const matchingPattern = /^J-[A-Z0-9]{8}$/; // Regex for "J-" followed by 8 alphanumeric characters
+                const jobrefRegex = /^J-[A-Z0-9]{8}$/; // Regex for "J-" followed by 8 alphanumeric characters
                 const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i; // Strict regex for UK postcodes
                 const excludedKeywords = ["heat pump ", "solar ", "ev "];
                 const jobIdsSet = new Set();
@@ -294,7 +554,7 @@ document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
                             }
                         });
 
-                        console.log("Card details:", { jobTitle, jobPostcode, cardBackgroundColor });
+                        //console.log("Card details:", { jobTitle, jobPostcode, cardBackgroundColor });
 
                         // Exclusion for on site reraises - assumed when an aborted appointment matches postcode of booked
                         if (cardBackgroundColor === abortedBackgroundCSS) {
@@ -308,7 +568,7 @@ document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
                         // Exclusion for LCT jobs & log postcode to ignore NBSI's and on site raises
                         if (excludedKeywords.some(keyword => jobTitle.includes(keyword))) {
                             if (jobPostcode) {
-                                console.log(`Excluding postcode ${jobPostcode} due to title: "${jobTitle}"`);
+                                //console.log(`Excluding postcode ${jobPostcode} due to title: "${jobTitle}"`);
                                 excludedPostcodes.push(jobPostcode);
                             }
                             return; // Skip processing this card
@@ -316,7 +576,7 @@ document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
 
                         // Skip cards with postcodes in the excluded list (nbsis & onsite reraises)
                         if (excludedPostcodes.includes(jobPostcode)) {
-                            console.log(`Skipping job with postcode ${jobPostcode} as it's in the excluded list.`);
+                            //console.log(`Skipping job with postcode ${jobPostcode} as it's in the excluded list.`);
                             return;
                         }
 
@@ -324,7 +584,7 @@ document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
                         if (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) {
                             pElements.forEach((pElement) => {
                                 const textContent = pElement.textContent.trim();
-                                if (matchingPattern.test(textContent)) {
+                                if (jobrefRegex.test(textContent)) {
                                     console.log(`Adding job ID: ${textContent}`);
                                     jobIdsSet.add(textContent);
                                     identifiedJobCount++;
@@ -340,7 +600,7 @@ document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
                 const jobIdsText = jobIdsArray.join('\n');
 
                 if (jobIdsArray.length === 0) {
-                    alert("No matching job IDs found.");
+                    alert("No unattended appointments found on this page.");
                     return;
                 }
 
@@ -362,8 +622,12 @@ document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
 
 
 // AM button event listener
-document.getElementById("copyBookedEngineerNamesByTimeAM").addEventListener("click", () => {
-    copyBookedEngineerNamesByTime('AM');
+document.getElementById("copyEngineerAM_metering").addEventListener("click", () => {
+    amChase('metering');
+});
+
+document.getElementById("copyEngineerAM_ev").addEventListener("click", () => {
+    amChase('ev_chargers');
 });
 
 
