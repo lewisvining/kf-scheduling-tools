@@ -1,5 +1,9 @@
 function compareVersions(v1, v2) {
-    const parseVersion = (version) => version.split('.').map(Number);
+    const parseVersion = (version) => {
+        const [major, minor = 0, patch = 0] = version.split('.').map(Number);
+        return [major, minor, patch];
+    };
+
     const [major1, minor1, patch1] = parseVersion(v1);
     const [major2, minor2, patch2] = parseVersion(v2);
 
@@ -7,6 +11,7 @@ function compareVersions(v1, v2) {
     if (minor1 !== minor2) return minor1 - minor2;
     return patch1 - patch2;
 }
+
 document.addEventListener('DOMContentLoaded', function() {
     fetch('https://raw.githubusercontent.com/lewisvining/kf-scheduling-tools/refs/heads/main/manifest.json')
     .then(response => response.json())
@@ -20,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (comparison > 0) {
                 // Current version is newer
                 document.getElementById('versionNotice').textContent = 'Experimental';
-                versionNotice.style.fontStyle = 'italic';
+                //versionNotice.style.fontStyle = 'italic';
                 document.getElementById('versionNotice').style.display = 'block';
             } else if (comparison < 0) {
                 // Current version is older
@@ -407,8 +412,8 @@ document.getElementById("copyEngineerPM_ev").addEventListener("click", () => {
                             identifiedEngineersCount++;
                             engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Unattended EV Job]");
                         } else if (hasIncompleteEV && !containsLCT) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Incomplete EV Job]");
+                            //identifiedEngineersCount++;
+                            //engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Incomplete EV Job]");
                         } else if (hasEnRouteEV && !containsLCT) {
                             identifiedEngineersCount++;
                             engineerNamesSet.add(engineerNameElement.textContent.trim() + " [En-Route EV Job]");
