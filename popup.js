@@ -434,7 +434,7 @@ document.getElementById("copyEngineerPM_ev").addEventListener("click", () => {
                 }
 
                 copyToClipboardFallback(namesText);  // Fallback in case of error
-                alert(`${identifiedEngineersCount} EV engineer(s) copied with incomplete or aborted appointments.`);
+                alert(`${identifiedEngineersCount} engineer(s) copied with unstarted or en-route EV appointments.`);
             },
         });
     });
@@ -455,17 +455,20 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                 const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"]');
 
                 jobElements.forEach((jobElement) => {
+                    const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
+
                     const jobTitleElement = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(1)');
                     const jobSkillsElement = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(3)');
                     const jobRefElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(1) > p:nth-of-type(1)');
                     const jobPostcodeElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(2) > p:nth-of-type(1)');
                     const jobTimeSlotElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)');
 
-                    const jobTitle = jobTitleElement?.textContent.trim() || "";
-                    const jobSkills = jobSkillsElement?.textContent.trim() || "";
-                    const jobRef = jobRefElement?.textContent.trim() || "";
-                    const jobPostcode = jobPostcodeElement?.textContent.trim() || "";
-                    const jobTimeSlot = jobTimeSlotElement?.textContent.trim() || "";
+                    const jobTitle = removeClickToCopy(jobTitleElement?.textContent.trim() || "");
+                    const jobSkills = removeClickToCopy(jobSkillsElement?.textContent.trim() || "");
+                    const jobRef = removeClickToCopy(jobRefElement?.textContent.trim() || "");
+                    const jobPostcode = removeClickToCopy(jobPostcodeElement?.textContent.trim() || "");
+                    const jobTimeSlot = removeClickToCopy(jobTimeSlotElement?.textContent.trim() || "");
+
 
                     let jobDate = "";
                     const pElements = jobElement.querySelectorAll("p");
