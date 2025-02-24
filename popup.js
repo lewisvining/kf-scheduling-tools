@@ -452,9 +452,24 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                 const jobsData = [];
                 const dateRegex = /^\d{1,2} [A-Za-z]{3}$/;
 
-                const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"]');
+                const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-:r"]');
+
+                const processedAccordions = new Set();
 
                 jobElements.forEach((jobElement) => {
+                    // Check if the element has an ID starting with "accordion-:r"
+                    const id = jobElement.id;
+                    if (id && id.startsWith("accordion-:r")) {
+                        // Extract the unique portion after "accordion-:r"
+                        const uniqueKey = id.split("accordion-:r")[1]; 
+
+                        // Skip the hp/solar appointments if an accordion is expanded
+                        if (processedAccordions.has(uniqueKey)) {
+                            return;
+                        }
+                        processedAccordions.add(uniqueKey);
+                    }
+
                     const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
 
                     const jobTitleElement = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(1)');
@@ -468,7 +483,6 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                     const jobRef = removeClickToCopy(jobRefElement?.textContent.trim() || "");
                     const jobPostcode = removeClickToCopy(jobPostcodeElement?.textContent.trim() || "");
                     const jobTimeSlot = removeClickToCopy(jobTimeSlotElement?.textContent.trim() || "");
-
 
                     let jobDate = "";
                     const pElements = jobElement.querySelectorAll("p");
@@ -495,6 +509,7 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                         });
                     }
                 });
+
 
                 if (jobsData.length === 0) {
                     alert("No jobs found in the scheduling window.");
