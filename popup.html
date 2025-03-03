@@ -55,7 +55,7 @@
           <div id="schedulingpageM">
             <h6>Inday Contractor Chasing</h6>
             <p class="k-text">Copy engineer names with unattended metering appointments</p>
-            <div class="btn-group" role="group" aria-label="Basic example">
+            <div class="btn-group" role="group">
               <button type="button" id="copyEngineerAM_metering" class="btn btn-outline-primary btn-sm">AMs Only</button>
               <button type="button" id="copyAllBookedEngineerNames" class="btn btn-outline-primary btn-sm" >All Appointments</button>
             </div>
@@ -70,7 +70,7 @@
           <div id="schedulingpageEV">
             <h6>Inday Contractor Chasing</h6>
             <p class="k-text">Copy engineer names with unattended or aborted EV appointments</p>
-            <div class="btn-group" role="group" aria-label="Basic example">
+            <div class="btn-group" role="group">
               <button type="button" id="copyEngineerAM_ev" class="btn btn-outline-primary btn-sm">AM Chase</button>
               <button type="button" id="copyEngineerPM_ev" class="btn btn-outline-primary btn-sm" >PM Chase</button>
             </div>
@@ -79,20 +79,23 @@
 
           <h6>Jeopardy List</h6>
             <p class="k-text">Copy the details of all the jobs currently showing in the scheduling window</p>
-            <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#exampleModal" class="btn btn-outline-primary btn-sm">Copy Jeopardy List</button>
+            <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#jeopModal" class="btn btn-outline-primary btn-sm">Copy Jeopardy List</button>
             <hr>
         </div>
         <div id="error" style="display:none;">
-          <p class="k-text">Open a <a href="https://field.oes-prod.energy/scheduling" target="_blank"> scheduling page</a></p>
+          <p class="k-text">Open a <a href="https://field.oes-prod.energy/scheduling"> scheduling page</a></p>
         </div>
 
-        <div class="container mt-3">
-            <button id="openSettings" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">
+        <div id="openSettings" class="container mt-3">
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">
                 Settings
             </button>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#regionModal">
+              Regional Filters
+          </button>
         </div>
         <!-- jeop modal -->
-        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal fade" id="jeopModal" tabindex="-1" aria-labelledby="jeopModalLabel" aria-hidden="true">
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
@@ -101,7 +104,7 @@
               <div class="modal-body k-text">
                 <form id="jeopardyForm">
                   <div class="mb-3 btn-sm">
-                    <select id="jobFilter" class="form-select btn-sm k-text" aria-label="Default select example" style="font-size:13px;">
+                    <select id="jobFilter" class="form-select btn-sm k-text" style="font-size:13px;">
                       <option value="all">All Job Types</option>
                       <option value="metering">Metering</option>
                       <option value="ev">EV</option>
@@ -119,14 +122,19 @@
         <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel">
             <div class="modal-dialog">
                 <div class="modal-content">
-                  <div class="modal-body" style="text-align: left;">
+                  <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body" style="text-align: centre;">
                     <div class="form-inline">
                       <form>
-                        <label for="modeSelect" class="form-label k-text">Mode:</label>
-                        <select id="modeSelect" class="form-select k-text">
-                            <option value="ev_chargers">EV Chargers</option>
-                            <option value="metering">Metering</option>
-                        </select>
+                        <label for="modeSelect" class="form-label k-text">Product mode</label>
+                        <div class="mb-3 btn-sm">
+                          <select id="modeSelect" class="form-select k-text">
+                              <option value="metering">Metering</option>
+                              <option value="ev_chargers">EV Chargers</option>
+                          </select>
+                        </div>
                       </form>
                     </div><!--
                     <form class="form-inline">
@@ -152,11 +160,42 @@
                       </div>
                     </form> -->
                   </div>
-                  <div class="modal-footer">
+                  <!--<div class="modal-footer">
                       <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Ok</button>
-                  </div>
+                  </div>-->
                 </div>
             </div>
+        </div>
+      <!-- region modal -->
+        <div class="modal fade" id="regionModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body k-text">
+                <form id="regionFilterForm">
+                  <label for="regionSelect" class="form-label k-text">Filter OES engineers by region</label>
+                  <div class="mb-3 btn-sm">
+                    <select id="regionSelect" class="form-select btn-sm k-text" style="font-size:13px;">
+                      <option value="empty">None</option>
+                      <option value="North">North</option>
+                      <option value="South">South</option>
+                      <option value="East">East</option>
+                      <option value="West">West</option>
+                    </select>
+                  </div>
+                  <hr>
+                  <label for="regionPostcodeCheck" class="form-label k-text">Check the region associated with a postcode</label>
+                  <div class="mb-3 btn-sm">
+                    <input type="" class="form-control k-text" id="regionPostcodeCheck">
+                  </div>
+                  <!--<button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>-->
+                </form>        
+                <span id="regionPostcodeOut" class="badge rounded-pill text-bg-primary" style="display:none;"></span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

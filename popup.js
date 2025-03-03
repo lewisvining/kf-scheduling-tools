@@ -67,15 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 document.getElementById('error').style.display = 'none';
-                if (currentUrl.includes("companies=OES")) {
-                    //NBSIbutton.classList.add("btn-outline-primary");
-                    //NBSIbutton.classList.remove("btn-outline-secondary", "disabled");
-                  } else {
-                    //NBSIbutton.classList.add("btn-outline-secondary", "disabled");
-                    //NBSIbutton.classList.remove("btn-outline-primary");
-                    //const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-                    //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-                  }
+
             } else {
                 document.getElementById('error').style.display = 'block';
                 document.getElementById('openSettings').style.display = 'none';
@@ -84,6 +76,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     checkPageUrl();
+
+    const regionSelect = document.getElementById("regionSelect");
+    const regionModal = new bootstrap.Modal(document.getElementById("regionModal"));
+    const postcodeInput = document.getElementById("regionPostcodeCheck");
+    const postcodeOutput = document.getElementById("regionPostcodeOut");
+
+    // Mapping of regions to their respective area codes
+    const regionAreas = {
+        "North": ["AB", "BD", "CA", "DD", "DE", "DG", "DH", "DL", "DN", "EH", "FK", "G", "HD", "HG", "HS", "HU", "HX", "IV", "KA", "KW", "KY", "LS", "ML", "NE", "PA", "PH", "S", "SR", "TD", "TS", "WF", "YO", "ZE"],
+        "South": ["BA", "BH", "BN", "BS", "CT", "DT", "EX", "GL", "GU", "ME", "PL", "PO", "RG", "RH", "SL", "SN", "SO", "SP", "TA", "TN", "TQ", "TR"],
+        "East": ["AL", "BR", "CB", "CM", "CO", "CR", "DA", "E", "EC", "EN", "HA", "IG", "IP", "KT", "N", "NR", "NW", "RM", "SE", "SG", "SM", "SS", "SW", "TW", "UB", "W", "WC", "WD"],
+        "West": ["B", "BB", "BL", "CF", "CH", "CV", "CW", "DY", "FY", "HR", "L", "LA", "LD", "LE", "LL", "LN", "M", "MK", "NG", "NN", "NP", "OL", "PE", "PR", "SA", "SK", "ST", "SY", "TF", "WA", "WN", "WR", "WS", "WV"]
+    };
+
+    // Function to determine the region from the postcode
+    function getRegionFromPostcode(postcode) {
+        const match = postcode.match(/^[A-Z]{1,2}/i); // Extracts the first 1 or 2 letters
+        if (!match) return null;
+
+        const postcodePrefix = match[0].toUpperCase(); // Convert to uppercase for consistency
+
+        for (const [region, codes] of Object.entries(regionAreas)) {
+            if (codes.includes(postcodePrefix)) {
+                return region;
+            }
+        }
+        return null;
+    }
+
+    // Event listener for postcode input
+    postcodeInput.addEventListener("input", function () {
+        const enteredPostcode = postcodeInput.value.trim();
+
+        if (enteredPostcode.length < 1) { // Allow single-letter postcodes
+            postcodeOutput.style.display = "none";
+            return;
+        }
+
+        const region = getRegionFromPostcode(enteredPostcode);
+
+        if (region) {
+            postcodeOutput.textContent = region;
+            postcodeOutput.style.display = "inline"; // Show the span with the region name
+        } else {
+            postcodeOutput.style.display = "none"; // Hide if no match is found
+        }
+    });
+
+    // Event listener for region selection change
+    regionSelect.addEventListener("change", function () {
+        const selectedValue = regionSelect.value;
+
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs.length === 0) return;
+
+            const tab = tabs[0];
+            const url = new URL(tab.url);
+
+            [...url.searchParams.keys()].forEach(param => {
+                if (param === "areaCodes") {
+                    url.searchParams.delete(param);
+                }
+            });
+
+            if (selectedValue in regionAreas) {
+                regionAreas[selectedValue].sort().forEach(code => {
+                    url.searchParams.append("areaCodes", code);
+                });
+            }
+
+            if (!url.searchParams.has("companies")) {
+                url.searchParams.append("companies", "OES");
+            }
+
+            chrome.tabs.update(tab.id, { url: url.toString() });
+
+            regionModal.hide();
+        });
+    });
 
     // Update storage and span when the mode is changed
     modeSelect.addEventListener("change", () => {
