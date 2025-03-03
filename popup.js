@@ -82,7 +82,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const postcodeInput = document.getElementById("regionPostcodeCheck");
     const postcodeOutput = document.getElementById("regionPostcodeOut");
 
-    // Mapping of regions to their respective area codes
     const regionAreas = {
         "North": ["AB", "BD", "CA", "DD", "DE", "DG", "DH", "DL", "DN", "EH", "FK", "G", "HD", "HG", "HS", "HU", "HX", "IV", "KA", "KW", "KY", "LS", "ML", "NE", "PA", "PH", "S", "SR", "TD", "TS", "WF", "YO", "ZE"],
         "South": ["BA", "BH", "BN", "BS", "CT", "DT", "EX", "GL", "GU", "ME", "PL", "PO", "RG", "RH", "SL", "SN", "SO", "SP", "TA", "TN", "TQ", "TR"],
@@ -90,12 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
         "West": ["B", "BB", "BL", "CF", "CH", "CV", "CW", "DY", "FY", "HR", "L", "LA", "LD", "LE", "LL", "LN", "M", "MK", "NG", "NN", "NP", "OL", "PE", "PR", "SA", "SK", "ST", "SY", "TF", "WA", "WN", "WR", "WS", "WV"]
     };
 
-    // Function to determine the region from the postcode
     function getRegionFromPostcode(postcode) {
-        const match = postcode.match(/^[A-Z]{1,2}/i); // Extracts the first 1 or 2 letters
+        const match = postcode.match(/^[A-Z]{1,2}/i);
         if (!match) return null;
 
-        const postcodePrefix = match[0].toUpperCase(); // Convert to uppercase for consistency
+        const postcodePrefix = match[0].toUpperCase();
 
         for (const [region, codes] of Object.entries(regionAreas)) {
             if (codes.includes(postcodePrefix)) {
@@ -105,11 +103,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
-    // Event listener for postcode input
     postcodeInput.addEventListener("input", function () {
         const enteredPostcode = postcodeInput.value.trim();
 
-        if (enteredPostcode.length < 1) { // Allow single-letter postcodes
+        if (enteredPostcode.length < 1) {
             postcodeOutput.style.display = "none";
             return;
         }
@@ -118,13 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (region) {
             postcodeOutput.textContent = region;
-            postcodeOutput.style.display = "inline"; // Show the span with the region name
+            postcodeOutput.style.display = "inline";
         } else {
-            postcodeOutput.style.display = "none"; // Hide if no match is found
+            postcodeOutput.style.display = "none";
         }
     });
 
-    // Event listener for region selection change
     regionSelect.addEventListener("change", function () {
         const selectedValue = regionSelect.value;
 
@@ -156,7 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Update storage and span when the mode is changed
     modeSelect.addEventListener("change", () => {
         const selectedMode = modeSelect.value;
         const modeDisplay = document.getElementById("kfstmodepill");
