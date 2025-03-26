@@ -425,7 +425,7 @@ function copyUnattendedRefs(product) {
                             }
 
                             if (excludedPostcodes.includes(jobPostcode)) {
-                                return;
+                                //return; - temp stop exclusions for NBSI & on site reraises
                             }
 
                             if (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) {
