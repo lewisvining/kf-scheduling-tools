@@ -1,3 +1,10 @@
+const regionAreas = {
+    "North": ["AB", "BD", "CA", "DD", "DE", "DG", "DH", "DL", "DN", "EH", "FK", "G", "HD", "HG", "HS", "HU", "HX", "IV", "KA", "KW", "KY", "LS", "ML", "NE", "PA", "PH", "S", "SR", "TD", "TS", "WF", "YO", "ZE"],
+    "South": ["BA", "BH", "BN", "BS", "CT", "DT", "EX", "GL", "GU", "ME", "PL", "PO", "RG", "RH", "SL", "SN", "SO", "SP", "TA", "TN", "TQ", "TR"],
+    "East": ["AL", "BR", "CB", "CM", "CO", "CR", "DA", "E", "EC", "EN", "HA", "IG", "IP", "KT", "N", "NR", "NW", "RM", "SE", "SG", "SM", "SS", "SW", "TW", "UB", "W", "WC", "WD", "HP", "LU"],
+    "West": ["B", "BB", "BL", "CF", "CH", "CV", "CW", "DY", "FY", "HR", "L", "LA", "LD", "LE", "LL", "LN", "M", "MK", "NG", "NN", "NP", "OL", "PE", "PR", "SA", "SK", "ST", "SY", "TF", "WA", "WN", "WR", "WS", "WV", "OX"]
+};
+
 function compareVersions(v1, v2) {
     const parseVersion = (version) => {
         const [major, minor = 0, patch = 0] = version.split('.').map(Number);
@@ -23,12 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentVersion !== remoteVersion) {
             const comparison = compareVersions(currentVersion, remoteVersion);
             if (comparison > 0) {
-                // Current version is newer
                 document.getElementById('versionNotice').textContent = 'Experimental';
-                //versionNotice.style.fontStyle = 'italic';
                 document.getElementById('versionNotice').style.display = 'block';
             } else if (comparison < 0) {
-                // Current version is older
                 document.getElementById('versionNotice').style.display = 'block';
             }
             console.log(`Version mismatch: installed(${currentVersion}), remote(${remoteVersion})`);
@@ -44,28 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const schedulingUrlPattern = /^https:\/\/field\.oes-prod\.energy\/scheduling.*/;
 
             if (schedulingUrlPattern.test(currentUrl)) {
-                const modeSelect = document.getElementById("modeSelect");
                 const modeDisplay = document.getElementById("kfstmodepill");
-                // Load saved mode from storage and update span
-                chrome.storage.sync.get("kfstMode", (data) => {
-                    const savedMode = data.kfstMode || "metering"; // Default to "Metering" if nothing is saved
-
-                    modeSelect.value = savedMode;
-                    if (savedMode === "metering") {
-                        modeDisplay.textContent = "Metering";
-                    } else if (savedMode === "ev_chargers") {
-                        modeDisplay.textContent = "EV Chargers";
-                    }
-
-                    if (savedMode == "metering") {
-                        document.getElementById('schedulingpageM').style.display = 'block';
-                        document.getElementById('schedulingpageEV').style.display = 'none';
-                    }   else if (savedMode == "ev_chargers") {
-                        document.getElementById('schedulingpageM').style.display = 'none';
-                        document.getElementById('schedulingpageEV').style.display = 'block';
-                    }
-                });
-                
+                modeDisplay.textContent = "Metering & EV Chargers";
+                document.getElementById('schedulingpageM').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
             } else {
@@ -78,48 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkPageUrl();
 
     const regionSelect = document.getElementById("regionSelect");
-    const regionModal = new bootstrap.Modal(document.getElementById("regionModal"));
-    const postcodeInput = document.getElementById("regionPostcodeCheck");
-    const postcodeOutput = document.getElementById("regionPostcodeOut");
-
-    const regionAreas = {
-        "North": ["AB", "BD", "CA", "DD", "DE", "DG", "DH", "DL", "DN", "EH", "FK", "G", "HD", "HG", "HS", "HU", "HX", "IV", "KA", "KW", "KY", "LS", "ML", "NE", "PA", "PH", "S", "SR", "TD", "TS", "WF", "YO", "ZE"],
-        "South": ["BA", "BH", "BN", "BS", "CT", "DT", "EX", "GL", "GU", "ME", "PL", "PO", "RG", "RH", "SL", "SN", "SO", "SP", "TA", "TN", "TQ", "TR"],
-        "East": ["AL", "BR", "CB", "CM", "CO", "CR", "DA", "E", "EC", "EN", "HA", "IG", "IP", "KT", "N", "NR", "NW", "RM", "SE", "SG", "SM", "SS", "SW", "TW", "UB", "W", "WC", "WD"],
-        "West": ["B", "BB", "BL", "CF", "CH", "CV", "CW", "DY", "FY", "HR", "L", "LA", "LD", "LE", "LL", "LN", "M", "MK", "NG", "NN", "NP", "OL", "PE", "PR", "SA", "SK", "ST", "SY", "TF", "WA", "WN", "WR", "WS", "WV"]
-    };
-
-    function getRegionFromPostcode(postcode) {
-        const match = postcode.match(/^[A-Z]{1,2}/i);
-        if (!match) return null;
-
-        const postcodePrefix = match[0].toUpperCase();
-
-        for (const [region, codes] of Object.entries(regionAreas)) {
-            if (codes.includes(postcodePrefix)) {
-                return region;
-            }
-        }
-        return null;
-    }
-
-    postcodeInput.addEventListener("input", function () {
-        const enteredPostcode = postcodeInput.value.trim();
-
-        if (enteredPostcode.length < 1) {
-            postcodeOutput.style.display = "none";
-            return;
-        }
-
-        const region = getRegionFromPostcode(enteredPostcode);
-
-        if (region) {
-            postcodeOutput.textContent = region;
-            postcodeOutput.style.display = "inline";
-        } else {
-            postcodeOutput.style.display = "none";
-        }
-    });
+    const settingsModal = new bootstrap.Modal(document.getElementById("settingsModal"));
 
     regionSelect.addEventListener("change", function () {
         const selectedValue = regionSelect.value;
@@ -148,93 +92,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
             chrome.tabs.update(tab.id, { url: url.toString() });
 
-            regionModal.hide();
+            settingsModal.hide();
         });
     });
 
-    modeSelect.addEventListener("change", () => {
-        const selectedMode = modeSelect.value;
-        const modeDisplay = document.getElementById("kfstmodepill");
-        chrome.storage.sync.set({ kfstMode: selectedMode }, () => {
-            console.log(`Mode set to: ${selectedMode}`);
-            if (selectedMode == "metering") {
-                document.getElementById('schedulingpageM').style.display = 'block';
-                document.getElementById('schedulingpageEV').style.display = 'none';
-            }   else if (selectedMode == "ev_chargers") {
-                document.getElementById('schedulingpageM').style.display = 'none';
-                document.getElementById('schedulingpageEV').style.display = 'block';
-            }
-        });
+    const utilSheetDataSwitchElement = document.getElementById("utilSheetDataSwitch");
 
-        if (selectedMode === "metering") {
-            modeDisplay.textContent = "Metering";
-        } else if (selectedMode === "ev_chargers") {
-            modeDisplay.textContent = "EV Chargers";
+    function updateStorage(value) {
+        chrome.storage.local.set({ switch_gsheetdata: value }, () => {
+            console.log("switch_gsheetdata updated:", value);
+        });
+    }
+
+    chrome.storage.local.get("switch_gsheetdata", (data) => {
+        if (data.switch_gsheetdata === undefined) {
+            updateStorage(true);
+            utilSheetDataSwitchElement.checked = true;
+        } else {
+            utilSheetDataSwitchElement.checked = data.switch_gsheetdata;
         }
     });
+
+    utilSheetDataSwitchElement.addEventListener("change", () => {
+        updateStorage(utilSheetDataSwitchElement.checked);
+    });
+
+    const now = new Date();
+    const hours = now.getHours();
+    //const minutes = now.getMinutes();
+
+    if (hours <= 12) {
+        document.getElementById("copyEngineerAM").classList.remove("btn-outline-secondary");
+        document.getElementById("copyEngineerAM").classList.add("btn-outline-primary");
+    } else {
+        document.getElementById("copyEngineerPM").classList.remove("btn-outline-secondary");
+        document.getElementById("copyEngineerPM").classList.add("btn-outline-primary");
+    }
     
 });
 
-document.getElementById("copyAllBookedEngineerNames").addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+document.getElementById("copyEngineerAM").addEventListener("click", () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
             func: () => {
-                const bookedBackgroundCSS = "rgb(245, 239, 253)";
-                const priorityBackgroundCSS = "rgb(249, 196, 251)";
-                const engineerNamesSet = new Set();
-                let identifiedEngineersCount = 0;
-
-                const engineers = document.querySelectorAll('li[data-engineer-row]');
-                engineers.forEach((engineerElement) => {
-                    const engineerNameElement = engineerElement.querySelector('h6, [data-testid="engineer-name"]');
-                    const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
-                    let hasUnattended = false;
-
-                    appointmentCards.forEach((appointmentCard) => {
-                        const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
-                        const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                        const name = engineerNameElement?.textContent.trim();
-                        const jobTitle = jobTitleElement?.textContent.trim();
-
-                        if (
-                            name && jobTitle &&
-                            (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) &&
-                            !jobTitle.includes('EV ') && !jobTitle.includes('Solar ') && !jobTitle.includes('Heat Pump ')
-                        ) {
-                            engineerNamesSet.add(name);
-                            hasUnattended = true;
-                        }
-                    });
-                    if (hasUnattended) {
-                        identifiedEngineersCount++;
-                    }
-                });
-
-                const engineerNamesArray = Array.from(engineerNamesSet);
-                const namesText = engineerNamesArray.join('\n');
-
-                function copyToClipboardFallback(text) {
-                    const tempTextArea = document.createElement('textarea');
-                    tempTextArea.value = text;
-                    document.body.appendChild(tempTextArea);
-                    tempTextArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempTextArea);
-                }
-
-                copyToClipboardFallback(namesText); 
-                alert(`${identifiedEngineersCount} engineer(s) copied.`);
-            }
-        });
-    });
-});
-
-function amChase(extensionMode) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: (extensionMode) => {
                 const bookedBackgroundCSS = "rgb(245, 239, 253)";
                 const priorityBackgroundCSS = "rgb(249, 196, 251)";
                 const abortedBackgroundCSS = "rgb(233, 233, 236)";
@@ -285,85 +186,48 @@ function amChase(extensionMode) {
                             }
                         });
 
-                        let containsLCT = false;
+                        let solar_hp = false;
                         let engineerNonStarter = true;
                         let hasUnattendedAM = false;
                         let hasAbortedEV = false;
                         let onlyPM = true;
 
-                        if (extensionMode == "metering") {
-                            engineerAppointments.forEach(appointment => {
-                                if (appointment.job.includes("EV ") || appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
-                                    containsLCT = true;
-                                    return;  // Skip further checks for this appointment
-                                }
-                                
-                                engineerAppointments.forEach(appointment => {
-                                    if (appointment.attended === false && appointment.slot === "AM") {
-                                        hasUnattendedAM = true;  
-                                    }
-                                    
-                                    if (appointment.attended === true) {
-                                        engineerNonStarter = false;  
-                                    }
-    
-                                    if (appointment.attended === false && (appointment.slot === "AM" || appointment.slot === "AD")) {
-                                        onlyPM = false;
-                                    }
-                                });
-                            });
-    
-                            if (engineerNonStarter && !containsLCT && !onlyPM) {
-                                identifiedEngineersCount++;
-                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [NON STARTER]");
-                            } else if (hasUnattendedAM && !containsLCT) {
-                                identifiedEngineersCount++;
-                                engineerNamesSet.add(engineerNameElement.textContent.trim());
+                        engineerAppointments.forEach(appointment => {
+                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
+                                solar_hp = true;
+                                return; // skips entire engineer if sith slr/hp - issue if eng has slr/hp AND metering or EV
                             }
-                        } else if (extensionMode === "ev_chargers") {
-                            for (let appointment of engineerAppointments) {
-                                if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
-                                    containsLCT = true;
-                                    break; // contains HP or Solar, so exit the outer loop
-                                }
-                                //console.table(appointment);
-                                for (let appointment of engineerAppointments) {
-                                    if (appointment.job.includes("EV ") && appointment.attended && !appointment.aborted) {
-                                        engineerNonStarter = false; // Engineer has started a second EV job on timeline
-                                        break; // Exit the outer loop
-                                    }
+                    
+                            if (appointment.attended === false && appointment.slot === "AM") {
+                                hasUnattendedAM = true;
+                            }
+                    
+                            if (appointment.attended === true) {
+                                engineerNonStarter = false;
+                            }
+                    
+                            if (appointment.attended === false && (appointment.slot === "AM" || appointment.slot === "AD")) {
+                                onlyPM = false;
+                            }
 
-                                    if (appointment.attended && !appointment.aborted) {
-                                        engineerNonStarter = false; // Has an attended job, exit
-                                        break; // Exit the outer loop
-                                    } else if (appointment.job.includes("EV ") && !appointment.attended && !appointment.aborted) {
-                                        engineerNonStarter = true;
-                                    } else if (!appointment.attended && appointment.slot === "AM") {
-                                        hasUnattendedAM = true; // Unattended metering AM
-                                    } else if (appointment.job.includes("EV ") && appointment.aborted){
-                                        hasAbortedEV = true;
-                                        engineerNonStarter = false;
-                                    }
-                                }
-                            }                            
-    
-                            if (engineerNonStarter && !containsLCT) {
-                                identifiedEngineersCount++;
-                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [EV Non-Starter]");
-                            } else if (hasUnattendedAM && !containsLCT) {
-                                identifiedEngineersCount++;
-                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Outstanding AM]");
-                            } else if (hasAbortedEV && !containsLCT) {
-                                identifiedEngineersCount++;
-                                engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Aborted EV - Available for Jeopardy]");
-                            }
+                            if (appointment.job.includes("Install") && appointment.job.includes("EV ") && appointment.aborted) {
+                                hasAbortedEV = true;
+                                engineerNonStarter = false;
+                            }                                
+                        });
+                    
+                        if (engineerNonStarter && !solar_hp && !onlyPM) {
+                            identifiedEngineersCount++;
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Non-starter]");
+                        } else if (hasUnattendedAM && !solar_hp) {
+                            identifiedEngineersCount++;
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended AM appointment]");
+                        } else if (hasAbortedEV){
+                            identifiedEngineersCount++;
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Aborted EV install - available for jeopardy]");
                         }
-                        
-                        
 
-                    } else{
-                        //console.log(engineerNameElement.textContent.trim() + " has no jobs assigned.");
-                    }
+                    } 
                 });
 
                 const engineerNamesArray = Array.from(engineerNamesSet);
@@ -378,20 +242,14 @@ function amChase(extensionMode) {
                     document.body.removeChild(tempTextArea);
                 }
 
-                copyToClipboardFallback(namesText);  // Fallback in case of error
-                if (extensionMode == "metering") {
-                    alert(`${identifiedEngineersCount} engineer(s) copied with unattended AM metering appointments.`);
-                    //console.lo g(`${identifiedEngineersCount} engineer(s) copied with unattended ${extensionMode} appointments.`);
-                } else if (extensionMode == "ev_chargers") {
-                    alert(`${identifiedEngineersCount} EV engineer(s) copied with unattended or aborted appointments.`);
-                }
+                copyToClipboardFallback(namesText);  
+                alert(`${identifiedEngineersCount} engineer(s) copied with unattended AM appointments.`);
             },
-            args: [extensionMode]
         });
     });
-}
+});
 
-document.getElementById("copyEngineerPM_ev").addEventListener("click", () => {
+document.getElementById("copyEngineerPM").addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
@@ -441,8 +299,7 @@ document.getElementById("copyEngineerPM_ev").addEventListener("click", () => {
                                     slot: appointmentTimeSlot,
                                     status: "enroute",
                                 });
-                            } 
-                            else {
+                            } else {
                                 engineerAppointments.push({
                                     eng: engineerNameElement.textContent.trim(),
                                     job: jobTitle,
@@ -454,35 +311,33 @@ document.getElementById("copyEngineerPM_ev").addEventListener("click", () => {
 
                         let containsLCT = false;
                         let hasEnRouteEV = false;
-                        let hasIncompleteEV = false;
+                        //let hasIncompleteEV = false;
                         let hasUnattendedEV = false;
+                        let hasUnattendedMetering = false;
 
                         for (let appointment of engineerAppointments) {
                             if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
-                                containsLCT = true;
-                                break; // contains HP or Solar, so exit the outer loop
-                            }
-                            for (let appointment of engineerAppointments) {
-                                if (appointment.job.includes("EV ") && appointment.status === "unattended") {
-                                    hasUnattendedEV = true; // Has an unattended job, exit
-                                    break; // Exit the outer loop
-                                } else if (appointment.job.includes("EV ") && appointment.status === "incomplete") {
-                                    hasIncompleteEV = true;
-                                } else if (appointment.job.includes("EV ") && appointment.status === "enroute") {
-                                    hasEnRouteEV = true;
-                                }
+                                //containsLCT = true;
+                                //break; - don't break so that engineers with slr/hp are still checked for EV & metering
+                            } else if (appointment.job.includes("EV ") && appointment.status === "unattended") {
+                                hasUnattendedEV = true;
+                                break; // Unattended EV so no need to check any other appts
+                            } else if (appointment.status === "unattended") {
+                                hasUnattendedMetering = true;
+                            } else if (appointment.job.includes("EV ") && appointment.status === "enroute") {
+                                hasEnRouteEV = true;
                             }
                         }                            
 
                         if (hasUnattendedEV && !containsLCT) {
                             identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Unattended EV Job]");
-                        } else if (hasIncompleteEV && !containsLCT) {
-                            //identifiedEngineersCount++;
-                            //engineerNamesSet.add(engineerNameElement.textContent.trim() + " [Incomplete EV Job]");
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended EV work]");
+                        } else if (hasUnattendedMetering && !containsLCT) {
+                            identifiedEngineersCount++;
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended metering work]");
                         } else if (hasEnRouteEV && !containsLCT) {
                             identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + " [En-Route EV Job]");
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [En-Route EV job]");
                         }
                     }
                 });
@@ -499,37 +354,173 @@ document.getElementById("copyEngineerPM_ev").addEventListener("click", () => {
                     document.body.removeChild(tempTextArea);
                 }
 
-                copyToClipboardFallback(namesText);  // Fallback in case of error
-                alert(`${identifiedEngineersCount} engineer(s) copied with unstarted or en-route EV appointments.`);
+                copyToClipboardFallback(namesText);
+                alert(`${identifiedEngineersCount} engineer(s) copied outstanding appointments.`);
             },
         });
     });
 });
 
+function copyUnattendedRefs(product) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const companiesValue = getCompaniesFromUrl(tabs[0].url);
+
+        chrome.storage.local.get("switch_gsheetdata", (data) => {
+            const switchGSheetData = data.switch_gsheetdata ?? true;
+
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: (companiesValue, switchGSheetData) => {
+                    const bookedBackgroundCSS = "rgb(245, 239, 253)";
+                    const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                    const abortedBackgroundCSS = "rgb(233, 233, 236)";
+                    const jobrefRegex = /^J-[A-Z0-9]{8}$/;
+                    const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i;
+                    const excludedKeywords = ["heat pump ", "solar ", "ev "];
+                    const jobIdsSet = new Set();
+                    let identifiedJobCount = 0;
+
+                    function copyToClipboardFallback(text) {
+                        const tempTextArea = document.createElement('textarea');
+                        tempTextArea.value = text;
+                        document.body.appendChild(tempTextArea);
+                        tempTextArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempTextArea);
+                    }
+
+                    const engineers = document.querySelectorAll('li[data-engineer-row]');
+                    engineers.forEach((engineerElement) => {
+                        const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                        
+                        const excludedPostcodes = [];
+
+                        appointmentCards.forEach((appointmentCard) => {
+                            const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                            const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                            const jobTitle = jobTitleElement?.textContent.trim().toLowerCase() || "";
+
+                            let jobPostcode = "";
+                            const pElements = appointmentCard.querySelectorAll('p');
+                            
+                            pElements.forEach((pElement) => {
+                                const pText = pElement.textContent.trim();
+                                if (postcodeRegex.test(pText)) {
+                                    jobPostcode = pText;
+                                }
+                            });
+
+                            if (cardBackgroundColor === abortedBackgroundCSS) {
+                                if (jobPostcode) {
+                                    excludedPostcodes.push(jobPostcode);
+                                }
+                                return;
+                            }
+
+                            if (excludedKeywords.some(keyword => jobTitle.includes(keyword))) {
+                                if (jobPostcode) {
+                                    excludedPostcodes.push(jobPostcode);
+                                }
+                                return;
+                            }
+
+                            if (excludedPostcodes.includes(jobPostcode)) {
+                                return;
+                            }
+
+                            if (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) {
+                                pElements.forEach((pElement) => {
+                                    const textContent = pElement.textContent.trim();
+                                    if (jobrefRegex.test(textContent)) {
+                                        jobIdsSet.add(textContent);
+                                        identifiedJobCount++;
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+                    const jobIdsArray = Array.from(jobIdsSet);
+                    const jobIdsText = jobIdsArray.join('\n');
+
+                    if (jobIdsArray.length === 0) {
+                        alert("No unattended appointments found on this page.");
+                        return;
+                    }
+
+                    if (switchGSheetData) {
+                        const today = new Date();
+                        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                        const formattedDate = today.toLocaleDateString("en-GB");
+                        const todayDay = dayNames[today.getDay()];
+
+                        let tableData = "";
+                        jobIdsArray.forEach((jobId) => {
+                            tableData += `${jobId}\t${companiesValue}\t${formattedDate}\t${todayDay}\tPlease Confirm Attendance\tJob Status Not Updated\n`;
+                        });
+
+                        copyToClipboardFallback(tableData);
+                        alert(`${identifiedJobCount} job references with details formatted for the Utilisation sheet copied to clipboard.`);
+                    } else {
+                        copyToClipboardFallback(jobIdsText);
+                        alert(`${identifiedJobCount} unattended job references copied.`);
+                    }
+                },
+                args: [companiesValue, switchGSheetData],
+            });
+        });
+    });
+
+    function getCompaniesFromUrl(url) {
+        const urlParams = new URLSearchParams(new URL(url).search);
+        const companies = urlParams.get('companies');
+        if (!companies || companies.split(',').length > 1) {
+            return ''; 
+        }
+
+        const companyMap = {
+            SMS_LTD: 'SMS LTD',
+            ENERGISE: 'ENG',
+            MOMENTUM: 'MOM',
+            MPAAS: 'MPS',
+            OES: 'OES (Field)'
+        };
+
+        return companyMap[companies] || companies;
+    }
+}
+
 document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
-    event.preventDefault(); // Prevent form from refreshing page
+    event.preventDefault();
 
     const selectedFilter = document.getElementById("jobFilter").value;
+    const selectedFormat = document.querySelector('input[name="jeopFormatRadio"]:checked')?.id || null;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
-            func: (filter) => {
+            func: (filter, format) => {
                 const jobsData = [];
-                const dateRegex = /^\d{1,2} [A-Za-z]{3}$/;
+                const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
 
                 const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-:r"]');
 
                 const processedAccordions = new Set();
 
+                function copyToClipboardFallback(text) {
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = text;
+                    document.body.appendChild(tempTextArea);
+                    tempTextArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempTextArea);
+                }
+
                 jobElements.forEach((jobElement) => {
-                    // Check if the element has an ID starting with "accordion-:r"
                     const id = jobElement.id;
                     if (id && id.startsWith("accordion-:r")) {
-                        // Extract the unique portion after "accordion-:r"
                         const uniqueKey = id.split("accordion-:r")[1]; 
 
-                        // Skip the hp/solar appointments if an accordion is expanded
                         if (processedAccordions.has(uniqueKey)) {
                             return;
                         }
@@ -559,8 +550,9 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                         }
                     });
 
-                    const includeJob = (filter === "all") ||
+                    const includeJob = (filter === "all") || 
                         (filter === "metering" && !jobTitle.includes("EV ") && !jobTitle.includes("Heat Pump ") && !jobTitle.includes("Solar ")) ||
+                        (filter === "metering_ev" && !jobTitle.includes("Heat Pump ") && !jobTitle.includes("Solar ")) ||
                         (filter === "ev" && jobTitle.includes("EV ")) ||
                         (filter === "hp" && jobTitle.includes("Heat Pump ")) ||
                         (filter === "solar" && jobTitle.includes("Solar "));
@@ -570,155 +562,147 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                             postcode: jobPostcode,
                             reference: jobRef,
                             jobtype: jobTitle,
-                            date: jobDate + " " + jobTimeSlot,
+                            date: jobDate,
+                            timeslot: jobTimeSlot,
+                            datetime: jobDate + " " + jobTimeSlot,
                             skills: jobSkills || "",
                         });
                     }
                 });
-
 
                 if (jobsData.length === 0) {
                     alert("No jobs found in the scheduling window.");
                     return;
                 }
 
-                console.table(jobsData);
+                let jobDataText = "";
 
-                const jobDataText = jobsData
-                    .map(job => `${job.postcode}\t${job.reference}\t${job.jobtype}\t${job.date}\t${job.skills}`)
-                    .join('\n');
+                if (format === "default") {
+                    jobDataText = jobsData
+                        .map(job => `${job.postcode}\t${job.reference}\t${job.jobtype}\t${job.datetime}\t${job.skills}`)
+                        .join('\n');
 
-                function copyToClipboardFallback(text) {
-                    const tempTextArea = document.createElement('textarea');
-                    tempTextArea.value = text;
-                    document.body.appendChild(tempTextArea);
-                    tempTextArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempTextArea);
+                    copyToClipboardFallback(jobDataText);
+                    alert(`${jobsData.length} job(s) copied to clipboard.`);
+
+                } else if (format === "meteringAM") {
+                    const today = new Date();
+                    const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+
+                    const meteringAMJobs = jobsData.filter(job => 
+                        job.date.startsWith(todayFormatted) && job.timeslot === ('AM') && !job.jobtype.includes('EV') && !job.jobtype.includes('solar') && !job.jobtype.includes('heat pump')
+                    );
+
+                    console.table(meteringAMJobs);
+
+                    jobDataText = meteringAMJobs
+                        .map(job => {
+                            const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
+                            const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
+                            return `${job.reference}\t\t${todayFormattedDDMMYYYY}\t${todayDayName}\tInstaller Cancellation`;
+                        })
+                        .join('\n');
+
+                    copyToClipboardFallback(jobDataText);
+                    alert(`${meteringAMJobs.length} AM job(s) copied for the metering GSOS sheet.`);
+
+                } else if (format === "meteringAD"){
+                    const today = new Date();
+                    const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+
+                    const meteringADJobs = jobsData.filter(job => 
+                        job.date.startsWith(todayFormatted) && !job.jobtype.includes('EV') && !job.jobtype.includes('solar') && !job.jobtype.includes('heat pump')
+                    );
+
+                    console.table(meteringADJobs);
+
+                    jobDataText = meteringADJobs
+                        .map(job => {
+                            const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
+                            const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
+                            return `${job.reference}\t\t${todayFormattedDDMMYYYY}\t${todayDayName}\tInstaller Cancellation`;
+                        })
+                        .join('\n');
+
+                    copyToClipboardFallback(jobDataText);
+                    alert(`${meteringADJobs.length} job(s) copied for the metering GSOS sheet.`);
+                } else if (format === "ev"){
+                    const today = new Date();
+                    const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+
+                    const evJobs = jobsData.filter(job => 
+                        job.date.startsWith(todayFormatted) && job.jobtype.includes('EV')
+                    );
+
+                    console.table(evJobs);
+
+                    jobDataText = evJobs
+                        .map(job => {
+                            const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
+                            const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
+                            return `${job.postcode}\t${job.reference}\t${todayFormattedDDMMYYYY}\t${todayDayName}`;
+                        })
+                        .join('\n');
+
+                    copyToClipboardFallback(jobDataText);
+                    alert(`${evJobs.length} job(s) copied for the EV GSOS sheet.`);
                 }
-
-                copyToClipboardFallback(jobDataText);
-                alert(`${jobsData.length} job(s) copied to clipboard.`);
             },
-            args: [selectedFilter]
+            args: [selectedFilter, selectedFormat]
         });
     });
 });
 
-document.getElementById("copyUnattendedRefs").addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: () => {
-                const bookedBackgroundCSS = "rgb(245, 239, 253)";
-                const priorityBackgroundCSS = "rgb(249, 196, 251)";
-                const abortedBackgroundCSS = "rgb(233, 233, 236)";
-                const jobrefRegex = /^J-[A-Z0-9]{8}$/; // Regex for "J-" followed by 8 alphanumeric characters
-                const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i; // Strict regex for UK postcodes
-                const excludedKeywords = ["heat pump ", "solar ", "ev "];
-                const jobIdsSet = new Set();
-                let identifiedJobCount = 0;
 
-                const engineers = document.querySelectorAll('li[data-engineer-row]');
-                engineers.forEach((engineerElement) => {
-                    const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
-                    
-                    const excludedPostcodes = [];
-                    //console.log("Processing engineer...");
+document.getElementById("regionPostcodeCheck").addEventListener("input", async function () {
+    const input = this.value.trim().toUpperCase();
 
-                    appointmentCards.forEach((appointmentCard) => {
-                        const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                        const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
-                        const jobTitle = jobTitleElement?.textContent.trim().toLowerCase() || "";
+    const match = input.match(/^([A-Z]{1,2})\d?/);
 
-                        let jobPostcode = "";
-                        const pElements = appointmentCard.querySelectorAll('p');
-                        
-                        // Find the postcode in <p> elements
-                        pElements.forEach((pElement) => {
-                            const pText = pElement.textContent.trim();
-                            if (postcodeRegex.test(pText)) {
-                                jobPostcode = pText; // Save the strictly matched postcode
-                                //console.log(`Found postcode: ${jobPostcode}`);
-                            }
-                        });
+    if (match) {
+        const postcodeArea = match[1];
+        const outputRegion = document.getElementById("regionPostcodeOut");
+        const outputBorders = document.getElementById("borderPostcodeOut");
 
-                        //console.log("Card details:", { jobTitle, jobPostcode, cardBackgroundColor });
+        const response = await fetch("postcode_borders.json");
+        const postcodeAdjacency = await response.json();
 
-                        // Exclusion for on site reraises - assumed when an aborted appointment matches postcode of booked
-                        if (cardBackgroundColor === abortedBackgroundCSS) {
-                            if (jobPostcode) {
-                                //console.log(`Adding postcode ${jobPostcode} to excluded list due to aborted status.`);
-                                excludedPostcodes.push(jobPostcode);
-                            }
-                            return; // Skip processing this card
-                        }
-
-                        // Exclusion for LCT jobs & log postcode to ignore NBSI's and on site raises
-                        if (excludedKeywords.some(keyword => jobTitle.includes(keyword))) {
-                            if (jobPostcode) {
-                                //console.log(`Excluding postcode ${jobPostcode} due to title: "${jobTitle}"`);
-                                excludedPostcodes.push(jobPostcode);
-                            }
-                            return; // Skip processing this card
-                        }
-
-                        // Skip cards with postcodes in the excluded list (nbsis & onsite reraises)
-                        if (excludedPostcodes.includes(jobPostcode)) {
-                            //console.log(`Skipping job with postcode ${jobPostcode} as it's in the excluded list.`);
-                            return;
-                        }
-
-                        // Process valid cards
-                        if (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) {
-                            pElements.forEach((pElement) => {
-                                const textContent = pElement.textContent.trim();
-                                if (jobrefRegex.test(textContent)) {
-                                    console.log(`Adding job ID: ${textContent}`);
-                                    jobIdsSet.add(textContent);
-                                    identifiedJobCount++;
-                                }
-                            });
-                        }
-                    });
-
-                    console.log("Excluded postcodes for this engineer:", excludedPostcodes);
-                });
-
-                const jobIdsArray = Array.from(jobIdsSet);
-                const jobIdsText = jobIdsArray.join('\n');
-
-                if (jobIdsArray.length === 0) {
-                    alert("No unattended appointments found on this page.");
-                    return;
-                }
-
-                function copyToClipboardFallback(text) {
-                    const tempTextArea = document.createElement('textarea');
-                    tempTextArea.value = text;
-                    document.body.appendChild(tempTextArea);
-                    tempTextArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempTextArea);
-                }
-
-                copyToClipboardFallback(jobIdsText);
-                alert(`${identifiedJobCount} unattended job references copied.`);
+        let foundRegion = null;
+        for (const [region, codes] of Object.entries(regionAreas)) {
+            if (codes.includes(postcodeArea)) {
+                foundRegion = region;
+                break;
             }
-        });
-    });
+        }
+
+        const neighbours = postcodeAdjacency[postcodeArea] || [];
+
+        if (foundRegion) {
+            outputRegion.style.display = "inline";
+            outputRegion.textContent = `${foundRegion}`;
+        } else {
+            outputRegion.style.display = "none";
+        }
+
+        if (neighbours.length > 0) {
+            outputBorders.style.display = "inline";
+            outputBorders.textContent = `Nearby: ${neighbours.join(", ")}`;
+        } else {
+            outputBorders.style.display = "none";
+        }
+    } else {
+        document.getElementById("regionPostcodeOut").style.display = "none";
+        document.getElementById("borderPostcodeOut").style.display = "none";
+    }
 });
 
-
-// AM button event listener
-document.getElementById("copyEngineerAM_metering").addEventListener("click", () => {
-    amChase('metering');
+document.getElementById("copyUnattendedRefs_metering").addEventListener("click", () => {
+    copyUnattendedRefs('metering');
 });
 
-document.getElementById("copyEngineerAM_ev").addEventListener("click", () => {
-    amChase('ev_chargers');
-});
-
+//document.getElementById("copyUnattendedRefs_ev").addEventListener("click", () => {
+    //copyUnattendedRefs('ev');
+//});
 
 const myModal = document.getElementById('myModal')
 const myInput = document.getElementById('myInput')
