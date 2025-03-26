@@ -625,7 +625,7 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                         .join('\n');
 
                     copyToClipboardFallback(jobDataText);
-                    alert(`${meteringADJobs.length} job(s) copied for the metering GSOS sheet.`);
+                    alert(`Copied ${meteringADJobs.length} job(s) scheduled for today & formatted for the metering GSOS sheet.`);
                 } else if (format === "ev"){
                     const today = new Date();
                     const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
@@ -640,12 +640,12 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                         .map(job => {
                             const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
                             const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
-                            return `${job.postcode}\t${job.reference}\t${todayFormattedDDMMYYYY}\t${todayDayName}`;
+                            return `${job.reference}\t${job.postcode}\t${todayFormattedDDMMYYYY}\t${todayDayName}`;
                         })
                         .join('\n');
 
                     copyToClipboardFallback(jobDataText);
-                    alert(`${evJobs.length} job(s) copied for the EV GSOS sheet.`);
+                    alert(`Copied ${evJobs.length} job(s) scheduled for today & formatted for the EV GSOS sheet.`);
                 }
             },
             args: [selectedFilter, selectedFormat]
