@@ -153,10 +153,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const jobRefInput = document.getElementById("accountJobRefLookup");
     const openJobBtn = document.getElementById("openJobBtn");
     
-    openJobBtn.addEventListener("click", () => {
-        const input = jobRefInput.value.trim();
-        quickLookup(input, "searchKF");
-    });
+    // openJobBtn.addEventListener("click", () => {
+    //     const input = jobRefInput.value.trim();
+    //     quickLookup(input, "searchKF");
+    // });
     
 });
 
