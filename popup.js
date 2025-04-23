@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('error').style.display = 'none';
 
             } else {
-                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').style.display = 'inline';
                 document.getElementById('openSettings').style.display = 'none';
                 document.getElementById('schedulingpage').style.display = 'none';
             }
@@ -128,6 +128,35 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById("copyEngineerPM").classList.remove("btn-outline-secondary");
         document.getElementById("copyEngineerPM").classList.add("btn-outline-primary");
     }
+
+    const accountJobRefLookupInput = document.getElementById("accountJobRefLookup");
+    const jobrefbuttonsContainer = document.getElementById("jobRefLookupBtns");
+    const accbuttonsContainer = document.getElementById("accLookupBtns");
+
+    // accountJobRefLookupInput.addEventListener("input", () => {
+    //     const value = accountJobRefLookupInput.value.trim().toUpperCase();
+        
+    //     const isPlainRef = /^[A-Z0-9]{8}$/.test(value); 
+    //     const isPrefixedRef = /^J-[A-Z0-9]{8}$/.test(value);
+    //     const isKrakenAcc = /^A-[A-Z0-9]{8}$/.test(value);
+
+    //     if (isPlainRef || isPrefixedRef) {
+    //         jobrefbuttonsContainer.style.display = "block";
+    //     } else if (isKrakenAcc) {
+    //         accbuttonsContainer.style.display = "block";
+    //     } else {
+    //         jobrefbuttonsContainer.style.display = "none";
+    //         accbuttonsContainer.style.display = "none";
+    //     }
+    // });
+
+    const jobRefInput = document.getElementById("accountJobRefLookup");
+    const openJobBtn = document.getElementById("openJobBtn");
+    
+    openJobBtn.addEventListener("click", () => {
+        const input = jobRefInput.value.trim();
+        quickLookup(input, "searchKF");
+    });
     
 });
 
@@ -186,15 +215,15 @@ document.getElementById("copyEngineerAM").addEventListener("click", () => {
                             }
                         });
 
-                        let solar_hp = false;
+                        let excludedJobType = false;
                         let engineerNonStarter = true;
                         let hasUnattendedAM = false;
                         let hasAbortedEV = false;
                         let onlyPM = true;
 
                         engineerAppointments.forEach(appointment => {
-                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
-                                solar_hp = true;
+                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ") || appointment.job.includes("EPC ") || appointment.job.includes("Electrode ")) {
+                                excludedJobType = true;
                                 return; // skips entire engineer if sith slr/hp - issue if eng has slr/hp AND metering or EV
                             }
                     
@@ -216,10 +245,10 @@ document.getElementById("copyEngineerAM").addEventListener("click", () => {
                             }                                
                         });
                     
-                        if (engineerNonStarter && !solar_hp && !onlyPM) {
+                        if (engineerNonStarter && !excludedJobType && !onlyPM) {
                             identifiedEngineersCount++;
                             engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Non-starter]");
-                        } else if (hasUnattendedAM && !solar_hp) {
+                        } else if (hasUnattendedAM && !excludedJobType) {
                             identifiedEngineersCount++;
                             engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended AM appointment]");
                         } else if (hasAbortedEV){
@@ -316,7 +345,7 @@ document.getElementById("copyEngineerPM").addEventListener("click", () => {
                         let hasUnattendedMetering = false;
 
                         for (let appointment of engineerAppointments) {
-                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ")) {
+                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ") || appointment.job.includes("EPC ") || appointment.job.includes("Electrode ")) {
                                 //containsLCT = true;
                                 //break; - don't break so that engineers with slr/hp are still checked for EV & metering
                             } else if (appointment.job.includes("EV ") && appointment.status === "unattended") {
@@ -337,7 +366,7 @@ document.getElementById("copyEngineerPM").addEventListener("click", () => {
                             engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended metering work]");
                         } else if (hasEnRouteEV && !containsLCT) {
                             identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [En-Route EV job]");
+                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [En-route EV job]");
                         }
                     }
                 });
@@ -376,7 +405,7 @@ function copyUnattendedRefs(product) {
                     const abortedBackgroundCSS = "rgb(233, 233, 236)";
                     const jobrefRegex = /^J-[A-Z0-9]{8}$/;
                     const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i;
-                    const excludedKeywords = ["heat pump ", "solar ", "ev "];
+                    const excludedKeywords = ["heat pump ", "solar ", "ev ", "electrode", ];
                     const jobIdsSet = new Set();
                     let identifiedJobCount = 0;
 
@@ -695,6 +724,22 @@ document.getElementById("regionPostcodeCheck").addEventListener("input", async f
         document.getElementById("borderPostcodeOut").style.display = "none";
     }
 });
+
+function quickLookup(input, action) {
+    if (!input || !action) return;
+  
+    if (action === "searchKF") {
+      let formattedInput = input.trim();
+      
+      if (!formattedInput.startsWith("J-") && !formattedInput.startsWith("j-")) {
+        formattedInput = `J-${formattedInput}`;
+      }
+  
+      const url = `https://field.oes-prod.energy/jobs-projects/jobs/${encodeURIComponent(formattedInput)}`;
+      chrome.tabs.create({ url });
+    }
+  
+}
 
 document.getElementById("copyUnattendedRefs_metering").addEventListener("click", () => {
     copyUnattendedRefs('metering');

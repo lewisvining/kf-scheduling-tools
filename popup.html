@@ -6,6 +6,7 @@
       body {
         padding: 20px;
         width: 300px;
+        min-height: 300px;
         height: auto; /* Make body fill the viewport */
         display: flex;
         justify-content: center; /* Horizontally center content */
@@ -88,17 +89,37 @@
             <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#jeopModal" class="btn btn-outline-primary btn-sm">Copy Jeopardy List</button>
             <hr>
         </div>
-        <div id="error" style="display:none;">
+        <!--<form class="mb-3">
+          <label for="accountJobRefLookup" class="form-label k-text">Kraken account & job reference lookup</label>
+          <div class="mb-3 btn-sm">
+            <input type="text" class="form-control k-text" id="accountJobRefLookup">
+          </div>
+        </form>
+        <div id="jobRefLookupBtns" style="display:none;">
+          <button type="button" id="openJobBtn" class="btn btn-primary btn-sm">Open Job</button>
+          <button type="button" id="searchJeopardyBtn" class="btn btn-outline-primary btn-sm" disabled>Search Jeopardy</button>
+        </div>
+        <div id="accLookupBtns" class="" style="display:none;">
+          <button type="button" id="openAccBtn" class="btn btn-primary btn-sm" disabled>Open Account</button>
+          <button type="button" id="searchAccKFBtn" class="btn btn-outline-primary btn-sm" disabled>Search KF</button>
+        </div>
+        <div id="olderror" style="display:none;">
           <p class="k-text">Open a <a href="https://field.oes-prod.energy/scheduling"> scheduling page</a></p>
         </div>
-
-        <div id="openSettings" class="container mt-3">
-            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">
-                Settings
-            </button>
-            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#regionModal">
-              Lookup Tools
+        <hr>-->
+        <div id="" class="container mt-3">
+          <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal" id="openSettings">
+              Settings
           </button>
+          <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#regionModal">
+            Lookup Tools
+          </button>
+          <a class="btn btn-outline-primary btn-sm icon-link icon-link-hover" href="https://field.oes-prod.energy/scheduling" id="error" target="_blank" style="display:none;">
+            KF Scheduling
+            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">  
+              <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+            </svg>
+          </a>
         </div>
         <!-- jeop modal -->
         <div class="modal fade" id="jeopModal" tabindex="-1" aria-labelledby="jeopModalLabel" aria-hidden="true">
@@ -189,7 +210,7 @@
                         </div>
                         <div class="form-check form-switch">
                           <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" disabled>
-                          <label class="form-check-label k-text" for="flexSwitchCheckDefault">Exclude NBSIs & on site re-raises</label>
+                          <!--<label class="form-check-label k-text" for="flexSwitchCheckDefault">Exclude NBSIs & on site re-raises</label>-->
                         </div>
                       </form>
                       <!--<form class="form-inline">
@@ -218,7 +239,7 @@
                 </div>
             </div>
         </div>
-        <!-- region modal -->
+        <!-- lookup modal -->
         <div class="modal fade" id="regionModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog">
             <div class="modal-content">
@@ -234,29 +255,7 @@
                 </form>        
                 <span id="regionPostcodeOut" class="badge rounded-pill text-bg-primary mb-3" style="display:none;"></span>
                 <span id="borderPostcodeOut" class="badge rounded-pill text-bg-warning mb-3" style="display:none;"></span>
-                <!--<form>
-                  <span class=" k-text">Engineer lookup</span>
-                  <div class="mb-3 btn-sm">
-                    <select id="engineerSelect" class="form-select k-text">
-                        <option value="none"></option>
-                    </select>
-                  </div>
-                  <table class="table" id="engtbl" style="display:none;">
-                    <thead>
-                      <tr>
-                        <th scope="col">Manager</th>
-                        <th scope="col">Region</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Name Name</td>
-                        <td>North</td>
-                      </tr>
-                    </tbody>
-                  </table>-->
-                </div>
-              </form>
+              </div>
             </div>
           </div>
         </div>
