@@ -67,34 +67,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     regionSelect.addEventListener("change", function () {
         const selectedValue = regionSelect.value;
-
+    
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs.length === 0) return;
-
+    
             const tab = tabs[0];
             const url = new URL(tab.url);
-
-            [...url.searchParams.keys()].forEach(param => {
-                if (param === "areaCodes") {
-                    url.searchParams.delete(param);
-                }
-            });
-
+    
+            url.searchParams.delete("areaCodes");
+    
             if (selectedValue in regionAreas) {
-                regionAreas[selectedValue].sort().forEach(code => {
-                    url.searchParams.append("areaCodes", code);
-                });
+                const sortedCodes = regionAreas[selectedValue].sort();
+                const joinedCodes = sortedCodes.join(",");
+                url.searchParams.set("areaCodes", joinedCodes);
             }
 
             if (!url.searchParams.has("companies")) {
                 url.searchParams.append("companies", "OES");
             }
-
+    
             chrome.tabs.update(tab.id, { url: url.toString() });
-
+    
             settingsModal.hide();
         });
     });
+    
 
     const utilSheetDataSwitchElement = document.getElementById("utilSheetDataSwitch");
 
@@ -150,8 +147,8 @@ document.addEventListener('DOMContentLoaded', function() {
     //     }
     // });
 
-    const jobRefInput = document.getElementById("accountJobRefLookup");
-    const openJobBtn = document.getElementById("openJobBtn");
+    // const jobRefInput = document.getElementById("accountJobRefLookup");
+    // const openJobBtn = document.getElementById("openJobBtn");
     
     // openJobBtn.addEventListener("click", () => {
     //     const input = jobRefInput.value.trim();
@@ -405,7 +402,7 @@ function copyUnattendedRefs(product) {
                     const abortedBackgroundCSS = "rgb(233, 233, 236)";
                     const jobrefRegex = /^J-[A-Z0-9]{8}$/;
                     const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i;
-                    const excludedKeywords = ["heat pump ", "solar ", "ev ", "electrode", ];
+                    const excludedKeywords = ["heat pump ", "solar ", "ev ", "electrode", "epc"];
                     const jobIdsSet = new Set();
                     let identifiedJobCount = 0;
 
