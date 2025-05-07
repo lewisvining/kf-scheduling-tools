@@ -130,30 +130,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const jobrefbuttonsContainer = document.getElementById("jobRefLookupBtns");
     const accbuttonsContainer = document.getElementById("accLookupBtns");
 
-    // accountJobRefLookupInput.addEventListener("input", () => {
-    //     const value = accountJobRefLookupInput.value.trim().toUpperCase();
+    accountJobRefLookupInput.addEventListener("input", () => {
+        const value = accountJobRefLookupInput.value.trim().toUpperCase();
         
-    //     const isPlainRef = /^[A-Z0-9]{8}$/.test(value); 
-    //     const isPrefixedRef = /^J-[A-Z0-9]{8}$/.test(value);
-    //     const isKrakenAcc = /^A-[A-Z0-9]{8}$/.test(value);
+        const isPlainRef = /^[A-Z0-9]{8}$/.test(value); 
+        const isPrefixedRef = /^J-[A-Z0-9]{8}$/.test(value);
+        const isKrakenAcc = /^A-[A-Z0-9]{8}$/.test(value);
 
-    //     if (isPlainRef || isPrefixedRef) {
-    //         jobrefbuttonsContainer.style.display = "block";
-    //     } else if (isKrakenAcc) {
-    //         accbuttonsContainer.style.display = "block";
-    //     } else {
-    //         jobrefbuttonsContainer.style.display = "none";
-    //         accbuttonsContainer.style.display = "none";
-    //     }
-    // });
+        if (isPlainRef || isPrefixedRef) {
+            jobrefbuttonsContainer.style.display = "block";
+        } else if (isKrakenAcc) {
+            accbuttonsContainer.style.display = "block";
+        } else {
+            jobrefbuttonsContainer.style.display = "none";
+            accbuttonsContainer.style.display = "none";
+        }
+    });
 
-    // const jobRefInput = document.getElementById("accountJobRefLookup");
-    // const openJobBtn = document.getElementById("openJobBtn");
+    const jobRefInput = document.getElementById("accountJobRefLookup");
+    const openJobBtn = document.getElementById("openJobBtn");
     
-    // openJobBtn.addEventListener("click", () => {
-    //     const input = jobRefInput.value.trim();
-    //     quickLookup(input, "searchKF");
-    // });
+    openJobBtn.addEventListener("click", () => {
+        const input = jobRefInput.value.trim();
+        quickLookup(input, "searchKF");
+    });
     
 });
 
@@ -738,13 +738,79 @@ function quickLookup(input, action) {
   
 }
 
+document.getElementById("copyJeop").addEventListener("click", () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: () => {
+                const jobsData = [];
+                const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
+                const today = new Date();
+                const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+            
+                const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-:r"]');
+                const processedAccordions = new Set();
+            
+                jobElements.forEach((jobElement) => {
+                    const id = jobElement.id;
+                    if (id && id.startsWith("accordion-:r")) {
+                        const uniqueKey = id.split("accordion-:r")[1];
+                        if (processedAccordions.has(uniqueKey)) return;
+                        processedAccordions.add(uniqueKey);
+                    }
+            
+                    const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
+                    const jobTitle = removeClickToCopy(jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(1)')?.textContent || "");
+                    const jobTimeSlot = removeClickToCopy(jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)')?.textContent || "");
+            
+                    let jobDate = "";
+                    jobElement.querySelectorAll("p").forEach((p) => {
+                        const text = p.textContent.trim();
+                        if (dateRegex.test(text)) jobDate = text;
+                    });
+            
+                    jobsData.push({
+                        jobtype: jobTitle,
+                        date: jobDate,
+                        timeslot: jobTimeSlot
+                    });
+                });
+            
+                const allToday = jobsData.filter(job => job.date.startsWith(todayFormatted));
+                const evToday = allToday.filter(job => job.jobtype.toLowerCase().includes("ev"));
+            
+                return {
+                    all: allToday.length,
+                    ev: evToday.length,
+                    jobs: jobsData,
+                    todayFormatted: todayFormatted
+                };
+            }            
+        }, (injectionResults) => {
+            const result = injectionResults[0]?.result;
+            if (!result) {
+                console.error("No data returned from script.");
+                return;
+            }
+        
+            document.getElementById("jeopCountALL").textContent = result.all;
+            document.getElementById("jeopCountEV").textContent = result.ev;
+        
+            const excludeKeywords = ["heat pump ", "solar ", "ev ", "electrode", "epc"];
+            const isExcluded = (title) =>
+                excludeKeywords.some(keyword => title.toLowerCase().includes(keyword));
+        
+            const meteringJobs = result.jobs.filter(job =>
+                job.date.startsWith(result.todayFormatted) && !isExcluded(job.jobtype)
+            );
+            const meteringAMJobs = meteringJobs.filter(job => job.timeslot === 'AM');
+        
+            document.getElementById("jeopCountAM").textContent =
+                `${meteringJobs.length} (${meteringAMJobs.length} AMs)`;
+        });
+    });
+});
+
 document.getElementById("copyUnattendedRefs_metering").addEventListener("click", () => {
     copyUnattendedRefs('metering');
 });
-
-//document.getElementById("copyUnattendedRefs_ev").addEventListener("click", () => {
-    //copyUnattendedRefs('ev');
-//});
-
-const myModal = document.getElementById('myModal')
-const myInput = document.getElementById('myInput')

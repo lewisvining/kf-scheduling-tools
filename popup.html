@@ -89,7 +89,7 @@
             <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#jeopModal" class="btn btn-outline-primary btn-sm">Copy Jeopardy List</button>
             <hr>
         </div>
-        <!-- <form class="mb-3">
+        <form class="mb-3" style="display:none;">
           <label for="accountJobRefLookup" class="form-label k-text">Kraken account & job reference lookup</label>
           <div class="mb-3 btn-sm">
             <input type="text" class="form-control k-text" id="accountJobRefLookup">
@@ -103,7 +103,7 @@
           <button type="button" id="openAccBtn" class="btn btn-primary btn-sm" disabled>Open Account</button>
           <button type="button" id="searchAccKFBtn" class="btn btn-outline-primary btn-sm" disabled>Search KF</button>
         </div>
-        <hr> -->
+        <hr style="display:none;">
         <div id="" class="container mt-3">
           <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal" id="openSettings">
               Settings
@@ -126,6 +126,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body k-text">
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th colspan="2" class="text-center">Today's Jeopardy</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">Total</th>
+                      <td id="jeopCountALL">Unknown</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Metering</th>
+                      <td id="jeopCountAM">Unknown</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">EV</th>
+                      <td id="jeopCountEV">Unknown</td>
+                    </tr>
+                  </tbody>
+                </table>
                 <form id="jeopardyForm">
                   <div class="mb-3 btn-sm">
                     <select id="jobFilter" class="form-select btn-sm k-text" style="font-size:13px;">
@@ -161,8 +182,8 @@
                       Today's work formatted for the EV GSOS sheet
                     </label>
                   </div>
-                  <button type="submit" class="btn btn-primary btn-sm">Copy Jeopardy List</button>
-                </form>        
+                  <button type="submit" class="btn btn-primary btn-sm mt-2">Copy Jeopardy List</button>
+                </form>
               </div>
             </div>
           </div>
@@ -205,10 +226,10 @@
                           <input class="form-check-input" type="checkbox" role="switch" id="utilSheetDataSwitch">
                           <label class="form-check-label k-text" for="flexSwitchCheckDefault">Automatically fill in additional fields for the Utilisation sheet</label>
                         </div>
-                        <div class="form-check form-switch">
+                        <!-- <div class="form-check form-switch">
                           <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" disabled>
-                          <!--<label class="form-check-label k-text" for="flexSwitchCheckDefault">Exclude NBSIs & on site re-raises</label>-->
-                        </div>
+                          <label class="form-check-label k-text" for="flexSwitchCheckDefault">Exclude NBSIs & on site re-raises</label>
+                        </div> -->
                       </form>
                       <!--<form class="form-inline">
                         <b class="k-text">Kraken</b>
