@@ -158,232 +158,257 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.getElementById("copyEngineerAM").addEventListener("click", () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: () => {
-                const bookedBackgroundCSS = "rgb(245, 239, 253)";
-                const priorityBackgroundCSS = "rgb(249, 196, 251)";
-                const abortedBackgroundCSS = "rgb(233, 233, 236)";
-                const engineerNamesSet = new Set();
-                let identifiedEngineersCount = 0;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabUrl = new URL(tabs[0].url);
+        const companiesParam = tabUrl.searchParams.get("companies");
 
-                const engineers = document.querySelectorAll('li[data-engineer-row]');
-                engineers.forEach((engineerElement) => {
-                    const engineerNameElement = engineerElement.querySelector('h6, [data-testid="engineer-name"]');
-                    const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
-                    let engineerAppointments = [];
+        fetch(chrome.runtime.getURL("engineer_data.json"))
+            .then((response) => response.json())
+            .then((engineerData) => {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    func: (companiesParam, engineerData) => {
+                        const bookedBackgroundCSS = "rgb(245, 239, 253)";
+                        const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                        const abortedBackgroundCSS = "rgb(233, 233, 236)";
+                        const engineerNamesSet = new Set();
+                        const matchedManagers = new Set();
+                        let identifiedEngineersCount = 0;
 
-                    if (appointmentCards.length > 0) {
-                        appointmentCards.forEach((appointmentCard) => {
-                            const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
-                            const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                            const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
-                            const jobTitle = jobTitleElement?.textContent.trim();
-                        
-                            if (
-                                engineerNameElement.textContent.trim() &&
-                                jobTitle &&
-                                (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS)
-                            ) {
-                                engineerAppointments.push({
-                                    eng: engineerNameElement.textContent.trim(),
-                                    job: jobTitle,
-                                    slot: appointmentTimeSlot,
-                                    attended: false,
-                                    aborted: false,
+                        const engineers = document.querySelectorAll('li[data-engineer-row]');
+                        engineers.forEach((engineerElement) => {
+                            const engineerId = engineerElement.getAttribute("data-engineer-row");
+                            const engineerNameElement = engineerElement.querySelector('h6, [data-testid="engineer-name"]');
+                            const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                            let engineerAppointments = [];
+
+                            if (appointmentCards.length > 0) {
+                                appointmentCards.forEach((appointmentCard) => {
+                                    const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                                    const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                                    const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
+                                    const jobTitle = jobTitleElement?.textContent.trim();
+
+                                    const baseData = {
+                                        eng: engineerNameElement.textContent.trim(),
+                                        job: jobTitle,
+                                        slot: appointmentTimeSlot
+                                    };
+
+                                    if (engineerNameElement.textContent.trim() && jobTitle) {
+                                        if (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) {
+                                            engineerAppointments.push({ ...baseData, attended: false, aborted: false });
+                                        } else if (cardBackgroundColor === abortedBackgroundCSS) {
+                                            engineerAppointments.push({ ...baseData, attended: true, aborted: true });
+                                        } else {
+                                            engineerAppointments.push({ ...baseData, attended: true, aborted: false });
+                                        }
+                                    }
                                 });
-                            } else if (cardBackgroundColor === abortedBackgroundCSS) {
-                                engineerAppointments.push({
-                                    eng: engineerNameElement.textContent.trim(),
-                                    job: jobTitle,
-                                    slot: appointmentTimeSlot,
-                                    attended: true,
-                                    aborted: true,
+
+                                let excludedJobType = false;
+                                let engineerNonStarter = true;
+                                let hasUnattendedAM = false;
+                                let hasAbortedEV = false;
+                                let onlyPM = true;
+
+                                engineerAppointments.forEach((appointment) => {
+                                    if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ") || appointment.job.includes("EPC ") || appointment.job.includes("Electrode ")) {
+                                        excludedJobType = true;
+                                        return;
+                                    }
+
+                                    if (!appointment.attended && appointment.slot === "AM") {
+                                        hasUnattendedAM = true;
+                                    }
+
+                                    if (appointment.attended) {
+                                        engineerNonStarter = false;
+                                    }
+
+                                    if (!appointment.attended && (appointment.slot === "AM" || appointment.slot === "AD")) {
+                                        onlyPM = false;
+                                    }
+
+                                    if (appointment.job.includes("Install") && appointment.job.includes("EV ") && appointment.aborted) {
+                                        hasAbortedEV = true;
+                                        engineerNonStarter = false;
+                                    }
                                 });
-                            } else {
-                                engineerAppointments.push({
-                                    eng: engineerNameElement.textContent.trim(),
-                                    job: jobTitle,
-                                    slot: appointmentTimeSlot,
-                                    attended: true,
-                                    aborted: false,
-                                });
+
+                                const engName = engineerNameElement.textContent.trim();
+                                const manager = (companiesParam === "OES" && engineerData[engineerId]?.manager) ? engineerData[engineerId].manager : "";
+
+                                if (engineerNonStarter && !excludedJobType && !onlyPM) {
+                                    identifiedEngineersCount++;
+                                    engineerNamesSet.add(`${engName}  [Non-starter]${manager ? " (" + manager + ")" : ""}`);
+                                } else if (hasUnattendedAM && !excludedJobType) {
+                                    identifiedEngineersCount++;
+                                    engineerNamesSet.add(`${engName}  [Unattended AM appointment]${manager ? " (" + manager + ")" : ""}`);
+                                } else if (hasAbortedEV) {
+                                    identifiedEngineersCount++;
+                                    engineerNamesSet.add(`${engName}  [Aborted EV install - available for jeopardy]${manager ? " (" + manager + ")" : ""}`);
+                                }
+
+                                // 🔍 If companies = OES, match and log manager
+                                if (companiesParam === "OES" && engineerData[engineerId]?.manager) {
+                                    matchedManagers.add(engineerData[engineerId].manager);
+                                }
                             }
                         });
 
-                        let excludedJobType = false;
-                        let engineerNonStarter = true;
-                        let hasUnattendedAM = false;
-                        let hasAbortedEV = false;
-                        let onlyPM = true;
+                        const engineerNamesArray = Array.from(engineerNamesSet);
+                        const namesText = engineerNamesArray.join('\n');
 
-                        engineerAppointments.forEach(appointment => {
-                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ") || appointment.job.includes("EPC ") || appointment.job.includes("Electrode ")) {
-                                excludedJobType = true;
-                                return; // skips entire engineer if sith slr/hp - issue if eng has slr/hp AND metering or EV
-                            }
-                    
-                            if (appointment.attended === false && appointment.slot === "AM") {
-                                hasUnattendedAM = true;
-                            }
-                    
-                            if (appointment.attended === true) {
-                                engineerNonStarter = false;
-                            }
-                    
-                            if (appointment.attended === false && (appointment.slot === "AM" || appointment.slot === "AD")) {
-                                onlyPM = false;
-                            }
-
-                            if (appointment.job.includes("Install") && appointment.job.includes("EV ") && appointment.aborted) {
-                                hasAbortedEV = true;
-                                engineerNonStarter = false;
-                            }                                
-                        });
-                    
-                        if (engineerNonStarter && !excludedJobType && !onlyPM) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Non-starter]");
-                        } else if (hasUnattendedAM && !excludedJobType) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended AM appointment]");
-                        } else if (hasAbortedEV){
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Aborted EV install - available for jeopardy]");
+                        function copyToClipboardFallback(text) {
+                            const tempTextArea = document.createElement('textarea');
+                            tempTextArea.value = text;
+                            document.body.appendChild(tempTextArea);
+                            tempTextArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempTextArea);
                         }
 
-                    } 
+                        copyToClipboardFallback(namesText);
+                        alert(`${identifiedEngineersCount} engineer(s) copied with unattended AM appointments.`);
+
+                        // ✅ Console.log matched managers
+                        if (companiesParam === "OES") {
+                            console.log("Matched OES Managers:", Array.from(matchedManagers));
+                        }
+
+                    },
+                    args: [companiesParam, engineerData],
                 });
-
-                const engineerNamesArray = Array.from(engineerNamesSet);
-                const namesText = engineerNamesArray.join('\n');
-
-                function copyToClipboardFallback(text) {
-                    const tempTextArea = document.createElement('textarea');
-                    tempTextArea.value = text;
-                    document.body.appendChild(tempTextArea);
-                    tempTextArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempTextArea);
-                }
-
-                copyToClipboardFallback(namesText);  
-                alert(`${identifiedEngineersCount} engineer(s) copied with unattended AM appointments.`);
-            },
-        });
+            })
+            .catch((error) => console.error("Failed to fetch engineer data:", error));
     });
 });
 
 document.getElementById("copyEngineerPM").addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: () => {
-                const bookedBackgroundCSS = "rgb(245, 239, 253)";
-                const priorityBackgroundCSS = "rgb(249, 196, 251)";
-                const inprogressBackgroundCSS = "rgb(229, 246, 254)";
-                const enrouteBackgroundCSS = "rgb(255, 249, 238)";
-                const engineerNamesSet = new Set();
-                let identifiedEngineersCount = 0;
+        const companiesParam = new URL(tabs[0].url).searchParams.get("companies");
 
-                const engineers = document.querySelectorAll('li[data-engineer-row]');
-                engineers.forEach((engineerElement) => {
-                    const engineerNameElement = engineerElement.querySelector('h6, [data-testid="engineer-name"]');
-                    const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
-                    let engineerAppointments = [];
+        fetch(chrome.runtime.getURL("engineer_data.json"))
+            .then((response) => response.json())
+            .then((engineerData) => {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    func: (companiesParam, engineerData) => {
+                        const bookedBackgroundCSS = "rgb(245, 239, 253)";
+                        const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                        const inprogressBackgroundCSS = "rgb(229, 246, 254)";
+                        const enrouteBackgroundCSS = "rgb(255, 249, 238)";
+                        const engineerNameEntries = [];
+                        let identifiedEngineersCount = 0;
 
-                    if (appointmentCards.length > 0) {
-                        appointmentCards.forEach((appointmentCard) => {
-                            const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
-                            const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                            const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
-                            const jobTitle = jobTitleElement?.textContent.trim();
-                        
-                            if (
-                                engineerNameElement.textContent.trim() &&
-                                jobTitle &&
-                                (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS)
-                            ) {
-                                engineerAppointments.push({
-                                    eng: engineerNameElement.textContent.trim(),
-                                    job: jobTitle,
-                                    slot: appointmentTimeSlot,
-                                    status: "unattended",
+                        const engineers = document.querySelectorAll('li[data-engineer-row]');
+                        engineers.forEach((engineerElement) => {
+                            const engineerId = engineerElement.getAttribute("data-engineer-row");
+                            const engineerNameElement = engineerElement.querySelector('h6, [data-testid="engineer-name"]');
+                            const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                            let engineerAppointments = [];
+
+                            if (appointmentCards.length > 0) {
+                                appointmentCards.forEach((appointmentCard) => {
+                                    const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                                    const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                                    const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
+                                    const jobTitle = jobTitleElement?.textContent.trim();
+
+                                    if (
+                                        engineerNameElement.textContent.trim() &&
+                                        jobTitle &&
+                                        (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS)
+                                    ) {
+                                        engineerAppointments.push({
+                                            eng: engineerNameElement.textContent.trim(),
+                                            job: jobTitle,
+                                            slot: appointmentTimeSlot,
+                                            status: "unattended",
+                                        });
+                                    } else if (cardBackgroundColor === inprogressBackgroundCSS) {
+                                        engineerAppointments.push({
+                                            eng: engineerNameElement.textContent.trim(),
+                                            job: jobTitle,
+                                            slot: appointmentTimeSlot,
+                                            status: "incomplete",
+                                        });
+                                    } else if (cardBackgroundColor === enrouteBackgroundCSS) {
+                                        engineerAppointments.push({
+                                            eng: engineerNameElement.textContent.trim(),
+                                            job: jobTitle,
+                                            slot: appointmentTimeSlot,
+                                            status: "enroute",
+                                        });
+                                    } else {
+                                        engineerAppointments.push({
+                                            eng: engineerNameElement.textContent.trim(),
+                                            job: jobTitle,
+                                            slot: appointmentTimeSlot,
+                                            status: "complete",
+                                        });
+                                    }
                                 });
-                            } else if (cardBackgroundColor === inprogressBackgroundCSS) {
-                                engineerAppointments.push({
-                                    eng: engineerNameElement.textContent.trim(),
-                                    job: jobTitle,
-                                    slot: appointmentTimeSlot,
-                                    status: "incomplete",
-                                });
-                            } else if (cardBackgroundColor === enrouteBackgroundCSS) {
-                                engineerAppointments.push({
-                                    eng: engineerNameElement.textContent.trim(),
-                                    job: jobTitle,
-                                    slot: appointmentTimeSlot,
-                                    status: "enroute",
-                                });
-                            } else {
-                                engineerAppointments.push({
-                                    eng: engineerNameElement.textContent.trim(),
-                                    job: jobTitle,
-                                    slot: appointmentTimeSlot,
-                                    status: "complete",
-                                });
+
+                                let containsLCT = false;
+                                let hasEnRouteEV = false;
+                                let hasUnattendedEV = false;
+                                let hasUnattendedMetering = false;
+
+                                for (let appointment of engineerAppointments) {
+                                    if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ") || appointment.job.includes("EPC ") || appointment.job.includes("Electrode ")) {
+                                        // Do not break; continue checking
+                                    } else if (appointment.job.includes("EV ") && appointment.status === "unattended") {
+                                        hasUnattendedEV = true;
+                                        break;
+                                    } else if (appointment.status === "unattended") {
+                                        hasUnattendedMetering = true;
+                                    } else if (appointment.job.includes("EV ") && appointment.status === "enroute") {
+                                        hasEnRouteEV = true;
+                                    }
+                                }
+
+                                const engName = engineerNameElement.textContent.trim();
+                                const manager = (companiesParam === "OES" && engineerData[engineerId]?.manager) ? engineerData[engineerId].manager : "";
+
+                                let label = "";
+                                if (hasUnattendedEV && !containsLCT) {
+                                    label = "[Unattended EV work]";
+                                } else if (hasUnattendedMetering && !containsLCT) {
+                                    label = "[Unattended metering work]";
+                                } else if (hasEnRouteEV && !containsLCT) {
+                                    label = "[En-route EV job]";
+                                }
+
+                                if (label) {
+                                    identifiedEngineersCount++;
+                                    const output = `${engName}  ${label}${manager ? ` (${manager})` : ""}`;
+                                    engineerNameEntries.push({ output, manager: manager || "" });
+                                }
                             }
                         });
 
-                        let containsLCT = false;
-                        let hasEnRouteEV = false;
-                        //let hasIncompleteEV = false;
-                        let hasUnattendedEV = false;
-                        let hasUnattendedMetering = false;
+                        // Sort alphabetically by manager name
+                        engineerNameEntries.sort((a, b) => a.manager.localeCompare(b.manager));
 
-                        for (let appointment of engineerAppointments) {
-                            if (appointment.job.includes("Solar ") || appointment.job.includes("Heat Pump ") || appointment.job.includes("EPC ") || appointment.job.includes("Electrode ")) {
-                                //containsLCT = true;
-                                //break; - don't break so that engineers with slr/hp are still checked for EV & metering
-                            } else if (appointment.job.includes("EV ") && appointment.status === "unattended") {
-                                hasUnattendedEV = true;
-                                break; // Unattended EV so no need to check any other appts
-                            } else if (appointment.status === "unattended") {
-                                hasUnattendedMetering = true;
-                            } else if (appointment.job.includes("EV ") && appointment.status === "enroute") {
-                                hasEnRouteEV = true;
-                            }
-                        }                            
+                        const namesText = engineerNameEntries.map(entry => entry.output).join('\n');
 
-                        if (hasUnattendedEV && !containsLCT) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended EV work]");
-                        } else if (hasUnattendedMetering && !containsLCT) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [Unattended metering work]");
-                        } else if (hasEnRouteEV && !containsLCT) {
-                            identifiedEngineersCount++;
-                            engineerNamesSet.add(engineerNameElement.textContent.trim() + "  [En-route EV job]");
+                        function copyToClipboardFallback(text) {
+                            const tempTextArea = document.createElement('textarea');
+                            tempTextArea.value = text;
+                            document.body.appendChild(tempTextArea);
+                            tempTextArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempTextArea);
                         }
-                    }
+
+                        copyToClipboardFallback(namesText);
+                        alert(`${identifiedEngineersCount} engineer(s) copied outstanding appointments.`);
+                    },
+                    args: [companiesParam, engineerData],
                 });
-
-                const engineerNamesArray = Array.from(engineerNamesSet);
-                const namesText = engineerNamesArray.join('\n');
-
-                function copyToClipboardFallback(text) {
-                    const tempTextArea = document.createElement('textarea');
-                    tempTextArea.value = text;
-                    document.body.appendChild(tempTextArea);
-                    tempTextArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempTextArea);
-                }
-
-                copyToClipboardFallback(namesText);
-                alert(`${identifiedEngineersCount} engineer(s) copied outstanding appointments.`);
-            },
-        });
+            });
     });
 });
 
@@ -402,7 +427,7 @@ function copyUnattendedRefs(product) {
                     const abortedBackgroundCSS = "rgb(233, 233, 236)";
                     const jobrefRegex = /^J-[A-Z0-9]{8}$/;
                     const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i;
-                    const excludedKeywords = ["heat pump ", "solar ", "ev ", "electrode", "epc"];
+                    const excludedKeywords = ["heat pump ", "solar ", "electrode", "epc"];
                     const jobIdsSet = new Set();
                     let identifiedJobCount = 0;
 
@@ -479,12 +504,38 @@ function copyUnattendedRefs(product) {
                         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                         const formattedDate = today.toLocaleDateString("en-GB");
                         const todayDay = dayNames[today.getDay()];
-
+                    
                         let tableData = "";
                         jobIdsArray.forEach((jobId) => {
-                            tableData += `${jobId}\t${companiesValue}\t${formattedDate}\t${todayDay}\tPlease Confirm Attendance\tJob Status Not Updated\n`;
+                            // Find corresponding appointmentCard by jobId to retrieve jobTitle and postcode
+                            const allCards = document.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                            let matchedTitle = "";
+                            let matchedPostcode = "";
+                    
+                            allCards.forEach(card => {
+                                const cardText = card.textContent;
+                                if (cardText.includes(jobId)) {
+                                    const jobTitleEl = card.querySelector('div > p:first-of-type');
+                                    matchedTitle = jobTitleEl?.textContent.trim().toLowerCase() || "";
+                    
+                                    const postcodeRegex = /[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}/i;
+                                    const pTags = card.querySelectorAll("p");
+                                    pTags.forEach(p => {
+                                        const pText = p.textContent.trim();
+                                        if (postcodeRegex.test(pText)) {
+                                            matchedPostcode = pText;
+                                        }
+                                    });
+                                }
+                            });
+                    
+                            if (matchedTitle.includes("ev")) {
+                                tableData += `${jobId}\t${matchedPostcode}\t${formattedDate}\t${todayDay}\t\t\tEV Appointment\n`;
+                            } else {
+                                tableData += `${jobId}\t${companiesValue}\t${formattedDate}\t${todayDay}\tPlease Confirm Attendance\tJob Status Not Updated\n`;
+                            }
                         });
-
+                    
                         copyToClipboardFallback(tableData);
                         alert(`${identifiedJobCount} job references with details formatted for the Utilisation sheet copied to clipboard.`);
                     } else {
@@ -509,7 +560,8 @@ function copyUnattendedRefs(product) {
             ENERGISE: 'ENG',
             MOMENTUM: 'MOM',
             MPAAS: 'MPS',
-            OES: 'OES (Field)'
+            OES: 'OES (Field)',
+            PROVIDOR: 'PVD',
         };
 
         return companyMap[companies] || companies;
