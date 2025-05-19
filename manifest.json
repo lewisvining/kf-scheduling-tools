@@ -1,28 +1,34 @@
 {
-    "manifest_version": 3,
-    "name": "Kraken Field Scheduling Tools",
-    "version": "1.7.4",
-    "description": "@lewis.vining",
-    "permissions": [
-      "storage",
-      "activeTab",
-      "scripting",
-      "clipboardWrite"
-    ],
-    "host_permissions": [
-      "*://*/*",
-      "https://raw.githubusercontent.com/*"
-    ],
-    "background": {
-      "service_worker": "background.js" 
-    },
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": "icon.png"
-    },
-    "icons": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
-    }
+  "manifest_version": 3,
+  "name": "Kraken Field Scheduling Tools",
+  "version": "1.8",
+  "description": "@lewis.vining",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "*://*/*",
+    "https://raw.githubusercontent.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js" 
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "web_accessible_resources": [
+  {
+    "resources": ["engineer_data.json"],
+    "matches": ["<all_urls>"]
+  }
+  ]
 }
