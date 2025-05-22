@@ -60,14 +60,15 @@
             <h6>Inday Contractor Chasing</h6>
             <p class="k-text">Copy engineer names with unattended metering & EV charger appointments</p>
             <div class="btn-group" role="group">
-              <button type="button" id="copyEngineerAM" class="btn btn-outline-secondary btn-sm ">AM Chase</button>
-              <button type="button" id="copyEngineerEV" class="btn btn-outline-primary btn-sm ">EV Chase</button>
-              <button type="button" id="copyEngineerPM" class="btn btn-outline-secondary btn-sm" >PM Chase</button>
+              <button type="button" id="copyEngineerAM" class="btn btn-outline-secondary btn-sm k-text">AM Chase</button>
+              <button type="button" id="copyEngineerEV" class="btn btn-outline-primary btn-sm k-text">EV Chase</button>
+              <button type="button" id="copyEngineerPM" class="btn btn-outline-secondary btn-sm k-text" >PM Chase</button>
             </div>
+            <button type="button" data-bs-toggle="modal" data-bs-target="#multiPageCopyModal" class="btn btn-link btn-sm k-text">Multi-page Chase</button>
             <hr>
             <h6>Unattended Appointments</h6>
             <p class="k-text">Copy job references for unattended metering & EV charger appointments</p>
-            <button type="button" id="copyUnattendedRefs_metering" class="btn btn-outline-primary btn-sm ">Unattended Chase</button>
+            <button type="button" id="copyUnattendedRefs_metering" class="btn btn-outline-primary btn-sm k-text">Unattended Chase</button>
             <!--<div class="btn-group" role="group">
               <button type="button" id="copyUnattendedRefs_metering" class="btn btn-outline-primary btn-sm ">Metering</button>
               <button type="button" id="copyUnattendedRefs_ev" class="btn btn-outline-primary btn-sm" disabled>EV Chargers</button>
@@ -87,10 +88,11 @@
 
           <h6>Jeopardy List</h6>
             <p class="k-text">Copy the details of all the jobs currently showing in the scheduling window</p>
-            <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#jeopModal" class="btn btn-outline-primary btn-sm">Copy Jeopardy List</button>
+            <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#jeopModal" class="btn btn-outline-primary btn-sm k-text">Copy Jeopardy List</button>
             <hr>
         </div>
-        <form class="mb-3" style="display:none;">
+        <!--lookup-->
+        <form class="mb-3 d-none">
           <label for="accountJobRefLookup" class="form-label k-text">Kraken account & job reference lookup</label>
           <div class="mb-3 btn-sm">
             <input type="text" class="form-control k-text" id="accountJobRefLookup">
@@ -104,15 +106,16 @@
           <button type="button" id="openAccBtn" class="btn btn-primary btn-sm" disabled>Open Account</button>
           <button type="button" id="searchAccKFBtn" class="btn btn-outline-primary btn-sm" disabled>Search KF</button>
         </div>
-        <hr style="display:none;">
-        <div id="" class="container mt-3">
-          <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal" id="openSettings">
+        <hr class="d-none">
+        <!--lookup end-->
+        <div id="" class="container mt-3 k-text">
+          <button class="btn btn-light btn-sm k-text" data-bs-toggle="modal" data-bs-target="#settingsModal" id="openSettings">
               Settings
           </button>
-          <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#regionModal">
+          <button class="btn btn-light btn-sm k-text" data-bs-toggle="modal" data-bs-target="#regionModal">
             Lookup Tools
           </button>
-          <a class="btn btn-outline-primary btn-sm icon-link icon-link-hover" href="https://field.oes-prod.energy/scheduling" id="error" target="_blank" style="display:none;">
+          <a class="btn btn-outline-primary btn-sm icon-link icon-link-hover k-text" href="https://field.oes-prod.energy/scheduling" id="error" target="_blank" style="display:none;">
             KF Scheduling
             <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">  
               <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
@@ -124,6 +127,7 @@
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
+                <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Jeopardy</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body k-text">
@@ -183,7 +187,7 @@
                       Today's work formatted for the EV GSOS sheet
                     </label>
                   </div>
-                  <button type="submit" class="btn btn-primary btn-sm mt-2">Copy Jeopardy List</button>
+                  <button type="submit" class="btn btn-primary btn-sm mt-2 k-text">Copy Jeopardy List</button>
                 </form>
               </div>
             </div>
@@ -194,6 +198,7 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                   <div class="modal-header">
+                    <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Settings</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
                   <div class="modal-body" style="text-align: centre;">
@@ -263,6 +268,7 @@
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
+                <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Lookup Tools</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body k-text">
@@ -277,6 +283,84 @@
               </div>
             </div>
           </div>
+        </div>
+         <!-- Multi-Page Copy Modal -->
+        <div class="modal fade" id="multiPageCopyModal" tabindex="-1" aria-labelledby="multiPageCopyModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow">
+              <div class="modal-header">
+                <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Multi-Page Selection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <div class="modal-body k-text">
+                <div id="multiCopyInitial" class="">
+                  <p class="mb-3 k-text">
+                    Choose which type of engineer appointments to collect across multiple pages. After selecting, the data from this page will be stored. You can continue collecting from additional pages and copy all at once later.
+                  </p>
+
+                  <div class="form-check text-start">
+                    <input class="form-check-input" type="radio" name="multiCopyRadio" id="multiCopyAM">
+                    <label class="form-check-label" for="multiCopyAM">
+                      AM Chase (Metering & EV Chargers)
+                    </label>
+                  </div>
+                  <div class="form-check text-start">
+                    <input class="form-check-input" type="radio" name="multiCopyRadio" id="multiCopyPM" >
+                    <label class="form-check-label" for="multiCopyPM">
+                      PM Chase (Metering & EV Chargers)
+                    </label>
+                  </div>
+                  <div class="form-check text-start">
+                    <input class="form-check-input" type="radio" name="multiCopyRadio" id="multiCopyEV" >
+                    <label class="form-check-label" for="multiCopyEV">
+                      EV Charger Chase
+                    </label>
+                  </div>
+
+                  <div id="multiCopyFeedback" class="alert alert-info mt-4 d-none" role="alert">
+                    <span id="multiCopyCount">0</span> line(s) copied and stored.
+                  </div>
+                </div>
+
+                <!-- Ongoing Multi-Page Copy View (dynamically injected into .modal-body) -->
+                <div id="multiCopyOngoing" class="k-text">
+                  <div class="alert alert-info p-2 mb-3">
+                    <strong>Multi-Page Copy In Progress</strong><br />
+                    <span id="multiCopyRowCount">75</span> line(s) copied from 
+                    <span id="multiCopyPageCount">3</span> page(s).<br />
+                    <small class="text-muted"><span id="multiCopyType">AM</span></small>
+                  </div>
+                  
+
+                  <div class="d-grid gap-1">
+                    <button id="multiCopyAddPage" class="btn btn-outline-primary btn-sm k-text">
+                      Add Current Page to List
+                    </button>
+                    <button id="multiCopyAddAndFinish" class="btn btn-outline-success btn-sm k-text">
+                      Finish & Copy Full List
+                    </button>
+                    <button id="multiCopyCancel" class="btn btn-outline-danger btn-sm k-text">
+                      Cancel & Clear List
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id ="multiCopyFooter" class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="multiCopySubmit">Continue</button>
+              </div>
+            </div>
+          </div>
+      </div>
+      </div>
+    </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+      <div id="toast-container" class="k-text toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div id="toast-content" class="toast-body">10 milliomn rows copied innit extending the message to see if it fits</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
       </div>
     </div>
