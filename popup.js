@@ -220,14 +220,14 @@ function copyEngineerAppointments(mode) {
                 if (isEVMode) {
                   appointmentCards.forEach((appointmentCard) => {
                     const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                    if (cardBackgroundColor !== bookedBackgroundCSS && cardBackgroundColor !== enrouteBackgroundCSS) return;
+                    if (cardBackgroundColor !== priorityBackgroundCSS && cardBackgroundColor !== bookedBackgroundCSS && cardBackgroundColor !== enrouteBackgroundCSS) return;
                 
                     const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
                     const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
                     const jobTitle = jobTitleElement?.textContent.trim();
                     if (!jobTitle || !jobTitle.includes("EV")) return;
   
-                    let status = cardBackgroundColor === bookedBackgroundCSS ? "Unattended" : "En Route";
+                    let status = (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) ? "Unattended" : "En Route";
                     let evType = "";
                     if (/Install/i.test(jobTitle)) evType = "Install";
                     else if (/Survey/i.test(jobTitle)) evType = "Survey";
@@ -282,8 +282,8 @@ function copyEngineerAppointments(mode) {
                       return;
                     }
   
-                    if (!appt.attended && appt.slot === mode) {
-                      hasUnattended = true;
+                    if (!appt.attended && (mode === "PM" ? ["AM", "AD", "PM"].includes(appt.slot) : appt.slot === mode)) {
+                        hasUnattended = true;
                     }
   
                     if (appt.attended) {
@@ -304,10 +304,20 @@ function copyEngineerAppointments(mode) {
                   if (engineerNonStarter && !excludedJobType && !onlyPM) {
                     label = "[Non-starter]";
                   } else if (hasUnattended && !excludedJobType) {
-                    label = `[Unattended ${mode} appointment]`;
+                    const hasUnattendedEV = engineerAppointments.some(appt =>
+                      !appt.attended &&
+                      ["AM", "AD", "PM"].includes(appt.slot) &&
+                      appt.job.includes("EV")
+                    );
+                    if (hasUnattendedEV) {
+                      label = `[Unattended EV ${mode} appointment]`;
+                    } else {
+                      label = `[Unattended ${mode} appointment]`;
+                    }
                   } else if (hasAbortedEV) {
                     label = "[Aborted EV install - available for jeopardy]";
                   }
+                  
   
                   if (label) {
                     identifiedEngineersCount++;
@@ -386,14 +396,14 @@ function multiCopyEngineerAppointments(mode) {
                 if (isEVMode) {
                   appointmentCards.forEach((appointmentCard) => {
                     const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                    if (cardBackgroundColor !== bookedBackgroundCSS && cardBackgroundColor !== enrouteBackgroundCSS) return;
+                    if (cardBackgroundColor !== priorityBackgroundCSS && cardBackgroundColor !== bookedBackgroundCSS && cardBackgroundColor !== enrouteBackgroundCSS) return;
   
                     const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
                     const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
                     const jobTitle = jobTitleElement?.textContent.trim();
                     if (!jobTitle || !jobTitle.includes("EV")) return;
   
-                    const status = cardBackgroundColor === bookedBackgroundCSS ? "Unattended" : "En Route";
+                    const status = (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) ? "Unattended" : "En Route";
                     const evType = /Install/i.test(jobTitle) ? "Install" :
                                    /Survey/i.test(jobTitle) ? "Survey" :
                                    /Aftercare/i.test(jobTitle) ? "Aftercare" : "Other";
@@ -417,75 +427,72 @@ function multiCopyEngineerAppointments(mode) {
                     });
                   });
                 } else {
-                  let engineerAppointments = [];
-                  appointmentCards.forEach((appointmentCard) => {
-                    const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
-                    const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                    const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
-                    const jobTitle = jobTitleElement?.textContent.trim();
-  
-                    if (engName && jobTitle) {
-                      engineerAppointments.push({
-                        job: jobTitle,
-                        slot: appointmentTimeSlot,
-                        attended: !(cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS),
-                        aborted: cardBackgroundColor === abortedBackgroundCSS,
-                        backgroundColor: cardBackgroundColor,
+                    let engineerAppointments = [];
+                    appointmentCards.forEach((appointmentCard) => {
+                      const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                      const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                      const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
+                      const jobTitle = jobTitleElement?.textContent.trim();
+                  
+                      if (engName && jobTitle) {
+                        engineerAppointments.push({
+                          job: jobTitle,
+                          slot: appointmentTimeSlot,
+                          attended: !(cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS),
+                          aborted: cardBackgroundColor === abortedBackgroundCSS,
+                          backgroundColor: cardBackgroundColor,
+                        });
+                      }
+                    });
+                  
+                    const relevantSlots = (mode === "PM") ? ["AM", "AD", "PM"] : [mode];
+                  
+                    const excludedJobType = engineerAppointments.some(appt =>
+                      appt.job.includes("Solar ") || appt.job.includes("Heat Pump ") ||
+                      appt.job.includes("EPC ") || appt.job.includes("Electrode ")
+                    );
+                  
+                    const engineerNonStarter = !engineerAppointments.some(appt => appt.attended);
+                  
+                    const hasUnattended = engineerAppointments.some(appt =>
+                      !appt.attended && relevantSlots.includes(appt.slot)
+                    );
+                  
+                    const hasUnattendedEV = engineerAppointments.some(appt =>
+                      !appt.attended && relevantSlots.includes(appt.slot) && appt.job.includes("EV")
+                    );
+                  
+                    const hasAbortedEV = engineerAppointments.some(appt =>
+                      appt.job.includes("EV") &&
+                      appt.aborted &&
+                      appt.backgroundColor === abortedBackgroundCSS
+                    );
+                  
+                    const onlyPM = engineerAppointments.every(appt =>
+                      !appt.attended || appt.slot === "PM"
+                    );
+                  
+                    let label = "";
+                    if (engineerNonStarter && !excludedJobType && !onlyPM) {
+                      label = "Non-starter";
+                    } else if (hasUnattended && !excludedJobType) {
+                      label = hasUnattendedEV
+                        ? `Unattended EV ${mode}`
+                        : `Unattended ${mode}`;
+                    } else if (hasAbortedEV) {
+                      label = "Aborted EV install";
+                    }
+                  
+                    if (label) {
+                      engineerEntries.push({
+                        name: engName,
+                        manager: manager || "",
+                        label,
+                        mode
                       });
                     }
-                  });
-  
-                  let excludedJobType = false;
-                  let engineerNonStarter = true;
-                  let hasUnattended = false;
-                  let hasAbortedEV = false;
-                  let onlyPM = true;
-  
-                  engineerAppointments.forEach((appt) => {
-                    const isEV = appt.job.includes("EV ");
-                    const isLCT = appt.job.includes("Solar ") || appt.job.includes("Heat Pump ") || appt.job.includes("EPC ") || appt.job.includes("Electrode ");
-  
-                    if (isLCT) {
-                      excludedJobType = true;
-                      return;
-                    }
-  
-                    if (!appt.attended && appt.slot === mode) {
-                      hasUnattended = true;
-                    }
-  
-                    if (appt.attended) {
-                      engineerNonStarter = false;
-                    }
-  
-                    if (!appt.attended && (appt.slot === "AM" || appt.slot === "AD")) {
-                      onlyPM = false;
-                    }
-  
-                    if (mode !== "PM" && isEV && appt.aborted && appt.backgroundColor === abortedBackgroundCSS) {
-                      hasAbortedEV = true;
-                      engineerNonStarter = false;
-                    }
-                  });
-  
-                  let label = "";
-                  if (engineerNonStarter && !excludedJobType && !onlyPM) {
-                    label = "Non-starter";
-                  } else if (hasUnattended && !excludedJobType) {
-                    label = `Unattended ${mode}`;
-                  } else if (hasAbortedEV) {
-                    label = "Aborted EV install";
                   }
-  
-                  if (label) {
-                    engineerEntries.push({
-                      name: engName,
-                      manager: manager || "",
-                      label,
-                      mode
-                    });
-                  }
-                }
+                  
               });
   
               return engineerEntries;
