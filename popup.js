@@ -473,14 +473,48 @@ function multiCopyEngineerAppointments(mode) {
                     );
                   
                     let label = "";
+
+                    if (mode === "AM") {
+                    const allUnattendedOrPriority = engineerAppointments.every(appt =>
+                        !appt.attended || appt.backgroundColor === priorityBackgroundCSS
+                    );
+
+                    const hasOnlyPMAppointments = engineerAppointments.every(appt => appt.slot === "PM");
+
+                    const hasUnattendedAM = engineerAppointments.some(appt =>
+                        !appt.attended &&
+                        (appt.slot === "AM" || appt.slot === "AD") &&
+                        !(
+                        appt.job.includes("Solar ") ||
+                        appt.job.includes("Heat Pump ") ||
+                        appt.job.includes("EPC ") ||
+                        appt.job.includes("Electrode ")
+                        )
+                    );
+
+                    const hasUnattendedAMEV = engineerAppointments.some(appt =>
+                        !appt.attended &&
+                        (appt.slot === "AM" || appt.slot === "AD") &&
+                        appt.job.includes("EV")
+                    );
+
+                    if (allUnattendedOrPriority && !hasOnlyPMAppointments) {
+                        label = "Non-starter";
+                    } else if (hasUnattendedAM) {
+                        label = hasUnattendedAMEV ? "Unattended EV AM" : "Unattended AM";
+                    }
+                    } else {
                     if (engineerNonStarter && !excludedJobType && !onlyPM) {
-                      label = "Non-starter";
+                        label = "Non-starter";
                     } else if (hasUnattended && !excludedJobType) {
-                      label = hasUnattendedEV
+                        label = hasUnattendedEV
                         ? `Unattended EV ${mode}`
                         : `Unattended ${mode}`;
-                    } else if (hasAbortedEV) {
-                      label = "Aborted EV install";
+                    }
+                    }
+
+                    if (!label && hasAbortedEV) {
+                    label = "Aborted EV install";
                     }
                   
                     if (label) {
