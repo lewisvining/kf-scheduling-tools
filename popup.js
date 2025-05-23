@@ -552,6 +552,162 @@ function multiCopyEngineerAppointments(mode) {
     });
 }
 
+function copyUnattendedRefs(product) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const companiesValue = getCompaniesFromUrl(tabs[0].url);
+
+        chrome.storage.local.get("switch_gsheetdata", (data) => {
+            const switchGSheetData = data.switch_gsheetdata ?? true;
+
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: (companiesValue, switchGSheetData) => {
+                    const bookedBackgroundCSS = "rgb(245, 239, 253)";
+                    const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                    const abortedBackgroundCSS = "rgb(233, 233, 236)";
+                    const jobrefRegex = /^J-[A-Z0-9]{8}$/;
+                    const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i;
+                    const excludedKeywords = ["heat pump ", "solar ", "electrode", "epc"];
+                    const jobIdsSet = new Set();
+                    let identifiedJobCount = 0;
+
+                    function copyToClipboardFallback(text) {
+                        const tempTextArea = document.createElement('textarea');
+                        tempTextArea.value = text;
+                        document.body.appendChild(tempTextArea);
+                        tempTextArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempTextArea);
+                    }
+
+                    const engineers = document.querySelectorAll('li[data-engineer-row]');
+                    engineers.forEach((engineerElement) => {
+                        const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                        
+                        const excludedPostcodes = [];
+
+                        appointmentCards.forEach((appointmentCard) => {
+                            const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                            const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                            const jobTitle = jobTitleElement?.textContent.trim().toLowerCase() || "";
+
+                            let jobPostcode = "";
+                            const pElements = appointmentCard.querySelectorAll('p');
+                            
+                            pElements.forEach((pElement) => {
+                                const pText = pElement.textContent.trim();
+                                if (postcodeRegex.test(pText)) {
+                                    jobPostcode = pText;
+                                }
+                            });
+
+                            if (cardBackgroundColor === abortedBackgroundCSS) {
+                                if (jobPostcode) {
+                                    excludedPostcodes.push(jobPostcode);
+                                }
+                                return;
+                            }
+
+                            if (excludedKeywords.some(keyword => jobTitle.includes(keyword))) {
+                                if (jobPostcode) {
+                                    excludedPostcodes.push(jobPostcode);
+                                }
+                                return;
+                            }
+
+                            if (excludedPostcodes.includes(jobPostcode)) {
+                                //return; - temp stop exclusions for NBSI & on site reraises
+                            }
+
+                            if (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) {
+                                pElements.forEach((pElement) => {
+                                    const textContent = pElement.textContent.trim();
+                                    if (jobrefRegex.test(textContent)) {
+                                        jobIdsSet.add(textContent);
+                                        identifiedJobCount++;
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+                    const jobIdsArray = Array.from(jobIdsSet);
+                    const jobIdsText = jobIdsArray.join('\n');
+
+                    if (jobIdsArray.length === 0) {
+                        alert("No unattended appointments found on this page.");
+                        return;
+                    }
+
+                    if (switchGSheetData) {
+                        const today = new Date();
+                        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                        const formattedDate = today.toLocaleDateString("en-GB");
+                        const todayDay = dayNames[today.getDay()];
+                    
+                        let tableData = "";
+                        jobIdsArray.forEach((jobId) => {
+                            // Find corresponding appointmentCard by jobId to retrieve jobTitle and postcode
+                            const allCards = document.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                            let matchedTitle = "";
+                            let matchedPostcode = "";
+                    
+                            allCards.forEach(card => {
+                                const cardText = card.textContent;
+                                if (cardText.includes(jobId)) {
+                                    const jobTitleEl = card.querySelector('div > p:first-of-type');
+                                    matchedTitle = jobTitleEl?.textContent.trim().toLowerCase() || "";
+                    
+                                    const postcodeRegex = /[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}/i;
+                                    const pTags = card.querySelectorAll("p");
+                                    pTags.forEach(p => {
+                                        const pText = p.textContent.trim();
+                                        if (postcodeRegex.test(pText)) {
+                                            matchedPostcode = pText;
+                                        }
+                                    });
+                                }
+                            });
+                    
+                            if (matchedTitle.includes("ev")) {
+                                //tableData += `${jobId}\t${matchedPostcode}\t${formattedDate}\t${todayDay}\t\t\tEV Appointment\n`;
+                            } else {
+                                tableData += `${jobId}\t${companiesValue}\t${formattedDate}\t${todayDay}\tPlease Confirm Attendance\tJob Status Not Updated\n`;
+                            }
+                        });
+                    
+                        copyToClipboardFallback(tableData);
+                        alert(`${identifiedJobCount} job references with details formatted for the Utilisation sheet copied to clipboard.`);
+                    } else {
+                        copyToClipboardFallback(jobIdsText);
+                        alert(`${identifiedJobCount} unattended job references copied.`);
+                    }
+                },
+                args: [companiesValue, switchGSheetData],
+            });
+        });
+    });
+
+    function getCompaniesFromUrl(url) {
+        const urlParams = new URLSearchParams(new URL(url).search);
+        const companies = urlParams.get('companies');
+        if (!companies || companies.split(',').length > 1) {
+            return ''; 
+        }
+
+        const companyMap = {
+            SMS_LTD: 'SMS LTD',
+            ENERGISE: 'ENG',
+            MOMENTUM: 'MOM',
+            MPAAS: 'MPS',
+            OES: 'OES (Field)',
+            PROVIDOR: 'PVD',
+        };
+
+        return companyMap[companies] || companies;
+    }
+}
+
 document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
     event.preventDefault();
 
@@ -917,7 +1073,6 @@ document.getElementById('multiCopyAddAndFinish').addEventListener('click', () =>
     });
 });
 
-
 document.getElementById('multiCopyAddPage').addEventListener('click', () => {
     chrome.storage.local.get(['multiCopyData'], (data) => {
       const copyData = data.multiCopyData || {};
@@ -945,8 +1100,6 @@ document.getElementById('multiCopyCancel').addEventListener('click', () => {
       }, 2000);
     });
 });
-  
-  
 
 function showToast(message, type = 'primary') {
     const toastEl = document.getElementById('toast-container');
