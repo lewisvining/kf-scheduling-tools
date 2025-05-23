@@ -475,42 +475,55 @@ function multiCopyEngineerAppointments(mode) {
                     let label = "";
 
                     if (mode === "AM") {
-                    const allUnattendedOrPriority = engineerAppointments.every(appt =>
-                        !appt.attended || appt.backgroundColor === priorityBackgroundCSS
-                    );
-
-                    const hasOnlyPMAppointments = engineerAppointments.every(appt => appt.slot === "PM");
-
-                    const hasUnattendedAM = engineerAppointments.some(appt =>
-                        !appt.attended &&
-                        (appt.slot === "AM" || appt.slot === "AD") &&
-                        !(
-                        appt.job.includes("Solar ") ||
-                        appt.job.includes("Heat Pump ") ||
-                        appt.job.includes("EPC ") ||
-                        appt.job.includes("Electrode ")
-                        )
-                    );
-
-                    const hasUnattendedAMEV = engineerAppointments.some(appt =>
-                        !appt.attended &&
-                        (appt.slot === "AM" || appt.slot === "AD") &&
-                        appt.job.includes("EV")
-                    );
-
-                    if (allUnattendedOrPriority && !hasOnlyPMAppointments) {
-                        label = "Non-starter";
-                    } else if (hasUnattendedAM) {
-                        label = hasUnattendedAMEV ? "Unattended EV AM" : "Unattended AM";
-                    }
-                    } else {
-                    if (engineerNonStarter && !excludedJobType && !onlyPM) {
-                        label = "Non-starter";
-                    } else if (hasUnattended && !excludedJobType) {
-                        label = hasUnattendedEV
-                        ? `Unattended EV ${mode}`
-                        : `Unattended ${mode}`;
-                    }
+                        const containsExcludedJobType = engineerAppointments.some(appt =>
+                          appt.job.includes("Solar ") ||
+                          appt.job.includes("Heat Pump ") ||
+                          appt.job.includes("EPC ") ||
+                          appt.job.includes("Electrode ")
+                        );
+                      
+                        if (containsExcludedJobType) return; // skip this engineer entirely
+                      
+                        const hasAttended = engineerAppointments.some(appt => appt.attended);
+                        const hasUnattendedAM = engineerAppointments.some(appt =>
+                          !appt.attended &&
+                          (appt.backgroundColor === bookedBackgroundCSS || appt.backgroundColor === priorityBackgroundCSS) &&
+                          appt.slot === "AM"
+                        );
+                      
+                        const onlyPMAppointments = engineerAppointments.every(appt => appt.slot === "PM");
+                      
+                        const allUnattendedOrPriority = engineerAppointments.every(appt =>
+                          !appt.attended &&
+                          (appt.backgroundColor === bookedBackgroundCSS || appt.backgroundColor === priorityBackgroundCSS)
+                        );
+                      
+                        let label = "";
+                      
+                        if (allUnattendedOrPriority && !onlyPMAppointments) {
+                          label = "Non-starter";
+                        } else if (hasAttended && hasUnattendedAM) {
+                          label = "Unattended AM";
+                        }
+                      
+                        if (label) {
+                          engineerEntries.push({
+                            name: engName,
+                            manager: manager || "",
+                            label,
+                            mode
+                          });
+                        }
+                      
+                        return;
+                      } else {
+                        if (engineerNonStarter && !excludedJobType && !onlyPM) {
+                            label = "Non-starter";
+                        } else if (hasUnattended && !excludedJobType) {
+                            label = hasUnattendedEV
+                            ? `Unattended EV ${mode}`
+                            : `Unattended ${mode}`;
+                        }
                     }
 
                     if (!label && hasAbortedEV) {
