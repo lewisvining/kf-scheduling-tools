@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Kraken Field Scheduling Tools",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "description": "@lewis.vining",
   "permissions": [
     "storage",

@@ -2,7 +2,8 @@ const regionAreas = {
     "North": ["AB", "BD", "CA", "DD", "DE", "DG", "DH", "DL", "DN", "EH", "FK", "G", "HD", "HG", "HS", "HU", "HX", "IV", "KA", "KW", "KY", "LS", "ML", "NE", "PA", "PH", "S", "SR", "TD", "TS", "WF", "YO", "ZE"],
     "South": ["BA", "BH", "BN", "BS", "CT", "DT", "EX", "GL", "GU", "ME", "PL", "PO", "RG", "RH", "SL", "SN", "SO", "SP", "TA", "TN", "TQ", "TR"],
     "East": ["AL", "BR", "CB", "CM", "CO", "CR", "DA", "E", "EC", "EN", "HA", "IG", "IP", "KT", "N", "NR", "NW", "RM", "SE", "SG", "SM", "SS", "SW", "TW", "UB", "W", "WC", "WD", "HP", "LU"],
-    "West": ["B", "BB", "BL", "CF", "CH", "CV", "CW", "DY", "FY", "HR", "L", "LA", "LD", "LE", "LL", "LN", "M", "MK", "NG", "NN", "NP", "OL", "PE", "PR", "SA", "SK", "ST", "SY", "TF", "WA", "WN", "WR", "WS", "WV", "OX"]
+    "West": ["B", "BB", "BL", "CF", "CH", "CV", "CW", "DY", "FY", "HR", "L", "LA", "LD", "LE", "LL", "LN", "M", "MK", "NG", "NN", "NP", "OL", "PE", "PR", "SA", "SK", "ST", "SY", "TF", "WA", "WN", "WR", "WS", "WV", "OX"],
+    "SE": ["BN", "BR", "CR", "CT", "DA", "KT", "ME", "RH", "SM", "TN", "TW" ]
 };
 
 function compareVersions(v1, v2) {
@@ -53,10 +54,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('schedulingpageM').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
+                chrome.storage.local.get(['multiCopyMode', 'multiCopyData'], function (data) {
+                    const multiCopyMode = data.multiCopyMode;
+                    const multiCopyData = data.multiCopyData || {
+                        rowCount: 0,
+                        pageCount: 0,
+                        type: ''
+                    };
+            
+                    if (!multiCopyMode) {
+                        document.getElementById("multiCopyOngoing").style.display = "none";
+                    } else {
+                        document.getElementById("multiCopyInitial").style.display = "none";
+                        document.getElementById("multiCopyFooter").style.display = "none";
+            
+                        document.getElementById("multiCopyRowCount").textContent = multiCopyData.rowCount;
+                        document.getElementById("multiCopyPageCount").textContent = multiCopyData.pageCount;
+                        document.getElementById("multiCopyType").textContent = 
+                        multiCopyData.type === "unattended" 
+                            ? "Unattended Evening Chase" 
+                            : multiCopyData.type + " chase";
+            
+                        const modalElement = document.getElementById('multiPageCopyModal');
+                        const bootstrapModal = new bootstrap.Modal(modalElement);
+                        bootstrapModal.show();
+                    }
+                });
+
             } else {
                 document.getElementById('error').style.display = 'inline';
                 document.getElementById('openSettings').style.display = 'none';
                 document.getElementById('schedulingpage').style.display = 'none';
+                document.querySelector('button[data-bs-target="#multiPageCopyModal"]').style.display = 'none';
             }
         });
     }
@@ -92,7 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-
     const utilSheetDataSwitchElement = document.getElementById("utilSheetDataSwitch");
 
     function updateStorage(value) {
@@ -122,10 +150,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById("copyEngineerAM").classList.remove("btn-outline-secondary");
         document.getElementById("copyEngineerAM").classList.add("btn-outline-primary");
         document.getElementById('multiCopyAM').setAttribute('checked', 'true');
-    } else {
+    } else if (hours <= 16) {
         document.getElementById("copyEngineerPM").classList.remove("btn-outline-secondary");
         document.getElementById("copyEngineerPM").classList.add("btn-outline-primary");
         document.getElementById('multiCopyPM').setAttribute('checked', 'true');
+    } else {
+        document.getElementById("copyEngineerPM").classList.remove("btn-outline-secondary");
+        document.getElementById("copyEngineerPM").classList.add("btn-outline-primary");
+        document.getElementById('multiCopyUnattended').setAttribute('checked', 'true');
     }
 
     const accountJobRefLookupInput = document.getElementById("accountJobRefLookup");
@@ -155,30 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
     openJobBtn.addEventListener("click", () => {
         const input = jobRefInput.value.trim();
         quickLookup(input, "searchKF");
-    });
-
-    chrome.storage.local.get(['multiCopyMode', 'multiCopyData'], function (data) {
-        const multiCopyMode = data.multiCopyMode;
-        const multiCopyData = data.multiCopyData || {
-            rowCount: 0,
-            pageCount: 0,
-            type: ''
-        };
-
-        if (!multiCopyMode) {
-            document.getElementById("multiCopyOngoing").style.display = "none";
-        } else {
-            document.getElementById("multiCopyInitial").style.display = "none";
-            document.getElementById("multiCopyFooter").style.display = "none";
-
-            document.getElementById("multiCopyRowCount").textContent = multiCopyData.rowCount;
-            document.getElementById("multiCopyPageCount").textContent = multiCopyData.pageCount;
-            document.getElementById("multiCopyType").textContent = multiCopyData.type + " chase";
-
-            const modalElement = document.getElementById('multiPageCopyModal');
-            const bootstrapModal = new bootstrap.Modal(modalElement);
-            bootstrapModal.show();
-        }
     });
     
 });
@@ -364,32 +372,83 @@ function multiCopyEngineerAppointments(mode) {
   
       fetch("https://raw.githubusercontent.com/lewisvining/kf-scheduling-tools/refs/heads/main/engineer_data.json")
         .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
+          if (!response.ok) throw new Error("Network response was not ok");
           return response.json();
         })
         .then((engineerData) => {
           chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
             func: (companiesParam, engineerData, mode) => {
-              const bookedBackgroundCSS = "rgb(245, 239, 253)";
-              const priorityBackgroundCSS = "rgb(249, 196, 251)";
-              const abortedBackgroundCSS = "rgb(233, 233, 236)";
-              const enrouteBackgroundCSS = "rgb(255, 249, 238)";
+                const bookedBackgroundCSS = "rgb(245, 239, 253)";
+                const priorityBackgroundCSS = "rgb(249, 196, 251)";
+                const abortedBackgroundCSS = "rgb(233, 233, 236)";
+                const enrouteBackgroundCSS = "rgb(208, 242, 255)";
+                //const postcodeRegex = /[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}/i;
+                const jobrefRegex = /^J-[A-Z0-9]{8}$/;
+  
+              if (mode === "unattended") {
+                const jobIdsSet = new Set();
+                const today = new Date();
+                const formattedDate = today.toLocaleDateString("en-GB");
+                const todayDay = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][today.getDay()];
+                const tableRows = [];
+
+                const appointmentCards = document.querySelectorAll('div[aria-label="Clickable appointment card"]');
+                const excludedKeywords = ["heat pump ", "solar ", "electrode", "epc", "ev"];
+
+                const companyMap = {
+                  SMS_LTD: "SMS LTD",
+                  ENERGISE: "ENG",
+                  MOMENTUM: "MOM",
+                  MPAAS: "MPS",
+                  OES: "OES (Field)",
+                  PROVIDOR: "PVD"
+                };
+
+                const companyLabel = companyMap[companiesParam] || companiesParam;
+
+                appointmentCards.forEach((card) => {
+                  const bgColor = window.getComputedStyle(card).backgroundColor;
+                  if (bgColor !== bookedBackgroundCSS && bgColor !== priorityBackgroundCSS) return;
+
+                  const jobTitleElement = card.querySelector('div > p:first-of-type');
+                  const jobTitle = jobTitleElement?.textContent.trim().toLowerCase() || "";
+
+                  if (excludedKeywords.some(keyword => jobTitle.includes(keyword))) return;
+
+                  let jobId = "";
+                  const pTags = card.querySelectorAll("p");
+                  for (let p of pTags) {
+                    const text = p.textContent.trim();
+                    if (jobrefRegex.test(text)) jobId = text;
+                  }
+
+                  if (!jobId || jobIdsSet.has(jobId)) return;
+                  jobIdsSet.add(jobId);
+
+                  tableRows.push({
+                    jobId,
+                    companiesParam: companyLabel,
+                    formattedDate,
+                    todayDay
+                  });
+                });
+
+                return tableRows;
+              }             
+
               const isEVMode = mode === "EV";
-  
               const engineerEntries = [];
-  
               const engineers = document.querySelectorAll('li[data-engineer-row]');
+  
               engineers.forEach((engineerElement) => {
                 const engineerId = engineerElement.getAttribute("data-engineer-row");
                 const engineerNameElement = engineerElement.querySelector('h6, [data-testid="engineer-name"]');
                 const appointmentCards = engineerElement.querySelectorAll('div[aria-label="Clickable appointment card"]');
                 const engName = engineerNameElement?.textContent.trim();
-                const manager = ((companiesParam === "OES" || isEVMode === true) && engineerData[engineerId]?.manager) 
-                    ? engineerData[engineerId].manager 
-                    : ""; // set manager, regardless of selected contractor in EV mode
+                const manager = ((companiesParam === "OES" || isEVMode === true) && engineerData[engineerId]?.manager)
+                  ? engineerData[engineerId].manager
+                  : "";
   
                 if (!engName || appointmentCards.length === 0) return;
   
@@ -405,8 +464,8 @@ function multiCopyEngineerAppointments(mode) {
   
                     const status = (cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS) ? "Unattended" : "En Route";
                     const evType = /Install/i.test(jobTitle) ? "Install" :
-                                   /Survey/i.test(jobTitle) ? "Survey" :
-                                   /Aftercare/i.test(jobTitle) ? "Aftercare" : "Other";
+                      /Survey/i.test(jobTitle) ? "Survey" :
+                        /Aftercare/i.test(jobTitle) ? "Aftercare" : "Other";
   
                     let jobReference = "";
                     const pElements = appointmentCard.querySelectorAll("p");
@@ -427,119 +486,83 @@ function multiCopyEngineerAppointments(mode) {
                     });
                   });
                 } else {
-                    let engineerAppointments = [];
-                    appointmentCards.forEach((appointmentCard) => {
-                      const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
-                      const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
-                      const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
-                      const jobTitle = jobTitleElement?.textContent.trim();
-                  
-                      if (engName && jobTitle) {
-                        engineerAppointments.push({
-                          job: jobTitle,
-                          slot: appointmentTimeSlot,
-                          attended: !(cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS),
-                          aborted: cardBackgroundColor === abortedBackgroundCSS,
-                          backgroundColor: cardBackgroundColor,
-                        });
-                      }
-                    });
-                  
-                    const relevantSlots = (mode === "PM") ? ["AM", "AD", "PM"] : [mode];
-                  
-                    const excludedJobType = engineerAppointments.some(appt =>
-                      appt.job.includes("Solar ") || appt.job.includes("Heat Pump ") ||
-                      appt.job.includes("EPC ") || appt.job.includes("Electrode ")
-                    );
-                  
-                    const engineerNonStarter = !engineerAppointments.some(appt => appt.attended);
-                  
-                    const hasUnattended = engineerAppointments.some(appt =>
-                      !appt.attended && relevantSlots.includes(appt.slot)
-                    );
-                  
-                    const hasUnattendedEV = engineerAppointments.some(appt =>
-                      !appt.attended && relevantSlots.includes(appt.slot) && appt.job.includes("EV")
-                    );
-                  
-                    const hasAbortedEV = engineerAppointments.some(appt =>
-                      appt.job.includes("EV") &&
-                      appt.aborted &&
-                      appt.backgroundColor === abortedBackgroundCSS
-                    );
-                  
-                    const onlyPM = engineerAppointments.every(appt =>
-                      !appt.attended || appt.slot === "PM"
-                    );
-                  
-                    let label = "";
-
-                    if (mode === "AM") {
-                        const containsExcludedJobType = engineerAppointments.some(appt =>
-                          appt.job.includes("Solar ") ||
-                          appt.job.includes("Heat Pump ") ||
-                          appt.job.includes("EPC ") ||
-                          appt.job.includes("Electrode ")
-                        );
-                      
-                        if (containsExcludedJobType) return; // skip this engineer entirely
-                      
-                        const hasAttended = engineerAppointments.some(appt => appt.attended);
-                        const hasUnattendedAM = engineerAppointments.some(appt =>
-                          !appt.attended &&
-                          (appt.backgroundColor === bookedBackgroundCSS || appt.backgroundColor === priorityBackgroundCSS) &&
-                          appt.slot === "AM"
-                        );
-                      
-                        const onlyPMAppointments = engineerAppointments.every(appt => appt.slot === "PM");
-                      
-                        const allUnattendedOrPriority = engineerAppointments.every(appt =>
-                          !appt.attended &&
-                          (appt.backgroundColor === bookedBackgroundCSS || appt.backgroundColor === priorityBackgroundCSS)
-                        );
-                      
-                        let label = "";
-                      
-                        if (allUnattendedOrPriority && !onlyPMAppointments) {
-                          label = "Non-starter";
-                        } else if (hasAttended && hasUnattendedAM) {
-                          label = "Unattended AM";
-                        }
-                      
-                        if (label) {
-                          engineerEntries.push({
-                            name: engName,
-                            manager: manager || "",
-                            label,
-                            mode
-                          });
-                        }
-                      
-                        return;
-                      } else {
-                        if (engineerNonStarter && !excludedJobType && !onlyPM) {
-                            label = "Non-starter";
-                        } else if (hasUnattended && !excludedJobType) {
-                            label = hasUnattendedEV
-                            ? `Unattended EV ${mode}`
-                            : `Unattended ${mode}`;
-                        }
-                    }
-
-                    if (!label && hasAbortedEV) {
-                    label = "Aborted EV install";
-                    }
-                  
-                    if (label) {
-                      engineerEntries.push({
-                        name: engName,
-                        manager: manager || "",
-                        label,
-                        mode
+                let engineerAppointments = [];
+                appointmentCards.forEach((appointmentCard) => {
+                    const jobTitleElement = appointmentCard.querySelector('div > p:first-of-type');
+                    const cardBackgroundColor = window.getComputedStyle(appointmentCard).backgroundColor;
+                    const appointmentTimeSlot = appointmentCard.getAttribute('data-timeslot');
+                    const jobTitle = jobTitleElement?.textContent.trim();
+  
+                    if (engName && jobTitle) {
+                      engineerAppointments.push({
+                        job: jobTitle,
+                        slot: appointmentTimeSlot,
+                        attended: !(cardBackgroundColor === bookedBackgroundCSS || cardBackgroundColor === priorityBackgroundCSS),
+                        aborted: cardBackgroundColor === abortedBackgroundCSS,
+                        backgroundColor: cardBackgroundColor,
                       });
                     }
-                  }
+                });
+
+                  console.table(engineerAppointments);
+  
+                  const relevantSlots = (mode === "PM") ? ["AM", "AD", "PM"] : [mode];
+                  const excludedJobType = engineerAppointments.some(appt =>
+                    appt.job.includes("Solar ") || appt.job.includes("Heat Pump ") ||
+                    appt.job.includes("EPC ") || appt.job.includes("Electrode ")
+                  );
+                  const engineerNonStarter = !engineerAppointments.some(appt => appt.attended);
+                  const hasUnattended = engineerAppointments.some(appt =>
+                    !appt.attended && relevantSlots.includes(appt.slot)
+                  );
+                  const hasUnattendedEV = engineerAppointments.some(appt =>
+                    !appt.attended && relevantSlots.includes(appt.slot) && appt.job.includes("EV")
+                  );
+                  const hasAbortedEV = engineerAppointments.some(appt =>
+                    appt.job.includes("EV") && appt.aborted && appt.backgroundColor === abortedBackgroundCSS
+                  );
+                  const onlyPM = false;
+  
+                  let label = "";
+                  if (mode === "AM") {
+                    // Remove all PM appointments first
+                    engineerAppointments = engineerAppointments.filter(appt => appt.slot !== "PM");
                   
+                    const hasAttended = engineerAppointments.some(appt => appt.attended);
+                    const hasUnattendedAM = engineerAppointments.some(appt =>
+                      !appt.attended && appt.slot === "AM"
+                    );
+                    const allUnattendedOrPriority = engineerAppointments.every(appt =>
+                      !appt.attended && (appt.backgroundColor === bookedBackgroundCSS || appt.backgroundColor === priorityBackgroundCSS)
+                    );
+                  
+                    if (allUnattendedOrPriority && !onlyPM && !excludedJobType) {
+                      label = "Non-starter";
+                    } else if (hasAttended && hasUnattendedAM && !excludedJobType) {
+                      label = "Unattended AM";
+                    }
+                  
+                    if (!label && hasAbortedEV && mode === "AM") {
+                      label = "Aborted EV install";
+                    }
+                  }
+                   else {
+                    if (engineerNonStarter && !excludedJobType && !onlyPM) {
+                      label = "Non-starter";
+                    } else if (hasUnattended && !excludedJobType) {
+                      label = hasUnattendedEV ? `Unattended EV ${mode}` : `Unattended ${mode}`;
+                    }
+                  }
+  
+                  if (label) {
+                    engineerEntries.push({
+                      name: engName,
+                      manager: manager || "",
+                      label,
+                      mode
+                    });
+                  }
+                }
               });
   
               return engineerEntries;
@@ -573,23 +596,19 @@ function multiCopyEngineerAppointments(mode) {
               };
   
               chrome.storage.local.set(updatedObject, () => {
-                console.log(`${newEntries.length} entries added. Total engineers: ${updatedEntries.length}, Pages: ${updatedObject.multiCopyData.pageCount}`);
+                console.log(`${newEntries.length} entries added. Total: ${updatedEntries.length}, Pages: ${updatedObject.multiCopyData.pageCount}`);
   
                 if (updatedObject.multiCopyData.pageCount === 1) {
                   const modalElement = document.getElementById('multiPageCopyModal');
                   const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                  if (modalInstance) {
-                    modalInstance.hide();
-                  }
-                  document.querySelector('button[data-bs-target="#multiPageCopyModal"]')
-                    .setAttribute('disabled', 'true');
-  
+                  if (modalInstance) modalInstance.hide();
+                  document.querySelector('button[data-bs-target="#multiPageCopyModal"]').setAttribute('disabled', 'true');
                   showToast(`Multi-page selection created. ${newEntries.length} entries added.`, 'success');
                 } else {
                   document.getElementById('multiCopyAddPage').setAttribute('disabled', 'true');
                   document.getElementById("multiCopyRowCount").textContent = updatedObject.multiCopyData.rowCount;
                   document.getElementById("multiCopyPageCount").textContent = updatedObject.multiCopyData.pageCount;
-                  showToast(`${newEntries.length} new entries added to list (${updatedObject.multiCopyData.rowCount} in total).`);
+                  showToast(`${newEntries.length} new entries added (${updatedObject.multiCopyData.rowCount} in total).`);
                 }
               });
             });
@@ -597,7 +616,7 @@ function multiCopyEngineerAppointments(mode) {
         })
         .catch((error) => console.error("Failed to fetch engineer data:", error));
     });
-}
+}  
 
 function copyUnattendedRefs(product) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -614,7 +633,7 @@ function copyUnattendedRefs(product) {
                     const abortedBackgroundCSS = "rgb(233, 233, 236)";
                     const jobrefRegex = /^J-[A-Z0-9]{8}$/;
                     const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$/i;
-                    const excludedKeywords = ["heat pump ", "solar ", "electrode", "epc"];
+                    const excludedKeywords = ["heat pump ", "solar ", "electrode", "epc", "ev"]; // temp exclusion for EV
                     const jobIdsSet = new Set();
                     let identifiedJobCount = 0;
 
@@ -694,7 +713,6 @@ function copyUnattendedRefs(product) {
                     
                         let tableData = "";
                         jobIdsArray.forEach((jobId) => {
-                            // Find corresponding appointmentCard by jobId to retrieve jobTitle and postcode
                             const allCards = document.querySelectorAll('div[aria-label="Clickable appointment card"]');
                             let matchedTitle = "";
                             let matchedPostcode = "";
@@ -717,14 +735,14 @@ function copyUnattendedRefs(product) {
                             });
                     
                             if (matchedTitle.includes("ev")) {
-                                //tableData += `${jobId}\t${matchedPostcode}\t${formattedDate}\t${todayDay}\t\t\tEV Appointment\n`;
+                                tableData += `${jobId}\t${matchedPostcode}\t${formattedDate}\t${todayDay}\t\t\tEV Appointment\n`;
                             } else {
                                 tableData += `${jobId}\t${companiesValue}\t${formattedDate}\t${todayDay}\tPlease Confirm Attendance\tJob Status Not Updated\n`;
                             }
                         });
                     
                         copyToClipboardFallback(tableData);
-                        alert(`${identifiedJobCount} job references with details formatted for the Utilisation sheet copied to clipboard.`);
+                        alert(`${identifiedJobCount} job reference(s) with details formatted for the Utilisation sheet copied to clipboard.`);
                     } else {
                         copyToClipboardFallback(jobIdsText);
                         alert(`${identifiedJobCount} unattended job references copied.`);
@@ -918,7 +936,6 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
     });
 });
 
-
 document.getElementById("regionPostcodeCheck").addEventListener("input", async function () {
     const input = this.value.trim().toUpperCase();
 
@@ -1075,6 +1092,8 @@ document.getElementById("multiCopySubmit").addEventListener("click", () => {
       mode = "PM";
     } else if (document.getElementById("multiCopyEV").checked) {
       mode = "EV";
+    }  else if (document.getElementById("multiCopyUnattended").checked) {
+        mode = "unattended";
     }
   
     if (!mode) {
@@ -1084,27 +1103,40 @@ document.getElementById("multiCopySubmit").addEventListener("click", () => {
     multiCopyEngineerAppointments(mode);
 });
   
-document.getElementById('multiCopyAddAndFinish').addEventListener('click', () => {
+document.getElementById('multiCopyFinish').addEventListener('click', () => {
     chrome.storage.local.get(['multiCopyData'], (data) => {
-        const entries = data.multiCopyData?.entries || [];
+        const multiCopyData = data.multiCopyData;
+        const entries = multiCopyData?.entries || [];
 
         if (entries.length === 0) {
             showToast(`The list contains no data`, 'danger');
             return;
         }
 
-        const sortedEntries = entries.sort((a, b) => {
-            const managerA = a.manager?.toLowerCase() || 'zzz';
-            const managerB = b.manager?.toLowerCase() || 'zzz';
-            return managerA.localeCompare(managerB);
-        });
+        let formatted;
 
-        const formatted = sortedEntries.map(e => {
-            const name = e.name;
-            const managerPart = e.manager ? ` (${e.manager})` : '';
-            const label = e.label || '';
-            return `${name}${managerPart}\t[${label}]`;
-        }).join('\n');
+        if (multiCopyData.type === 'unattended') {
+            formatted = entries.map(e => {
+              const jobId = e.jobId || '';
+              const companies = e.companiesParam || '';
+              const date = e.formattedDate || '';
+              const day = e.todayDay || '';
+              return `${jobId}\t${companies}\t${date}\t${day}\tPlease Confirm Attendance\tJob Status Not Updated`;
+            }).join('\n');
+          } else {
+            const sortedEntries = entries.sort((a, b) => {
+                const managerA = a.manager?.toLowerCase() || 'zzz';
+                const managerB = b.manager?.toLowerCase() || 'zzz';
+                return managerA.localeCompare(managerB);
+            });
+
+            formatted = sortedEntries.map(e => {
+                const name = e.name;
+                const managerPart = e.manager ? ` (${e.manager})` : '';
+                const label = e.label || '';
+                return `${name}${managerPart}\t[${label}]`;
+            }).join('\n');
+        }
 
         navigator.clipboard.writeText(formatted).then(() => {
             chrome.storage.local.remove(['multiCopyData', 'multiCopyMode', 'multiCopyPageCount', 'multiCopyType'], () => {
@@ -1138,7 +1170,7 @@ document.getElementById('multiCopyCancel').addEventListener('click', () => {
 
     document.getElementById('multiCopyCancel').setAttribute('disabled', 'true');
     document.getElementById('multiCopyAddPage').setAttribute('disabled', 'true');
-    document.getElementById('multiCopyAddAndFinish').setAttribute('disabled', 'true');
+    document.getElementById('multiCopyFinish').setAttribute('disabled', 'true');
   
     chrome.storage.local.remove(['multiCopyData', 'multiCopyMode', 'multiCopyPageCount', 'multiCopyType'], () => {
       showToast(`Clearing list...`, 'danger');

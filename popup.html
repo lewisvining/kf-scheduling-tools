@@ -64,7 +64,6 @@
               <button type="button" id="copyEngineerEV" class="btn btn-outline-primary btn-sm k-text">EV Chase</button>
               <button type="button" id="copyEngineerPM" class="btn btn-outline-secondary btn-sm k-text" >PM Chase</button>
             </div>
-            <button type="button" data-bs-toggle="modal" data-bs-target="#multiPageCopyModal" class="btn btn-link btn-sm k-text">Multi-page chase</button>
             <hr>
             <h6>Unattended Appointments</h6>
             <p class="k-text">Copy job references for unattended metering appointments</p>
@@ -99,6 +98,9 @@
         <hr class="d-none">
         <!--lookup end-->
         <div id="" class="container mt-3 k-text">
+          <button type="button" data-bs-toggle="modal" data-bs-target="#multiPageCopyModal" class="btn btn-light btn-sm k-text">
+            Multi-Page
+          </button>
           <button class="btn btn-light btn-sm k-text" data-bs-toggle="modal" data-bs-target="#settingsModal" id="openSettings">
               Settings
           </button>
@@ -211,6 +213,7 @@
                             <option value="South">South</option>
                             <option value="East">East</option>
                             <option value="West">West</option>
+                            <option value="SE">South East (Volt)</option>
                           </select>
                         </div>
                       </form>
@@ -274,7 +277,7 @@
             </div>
           </div>
         </div>
-         <!-- Multi-Page Copy Modal -->
+         <!-- multipage copy -->
         <div class="modal fade" id="multiPageCopyModal" tabindex="-1" aria-labelledby="multiPageCopyModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow">
@@ -307,6 +310,12 @@
                       EV Charger Chase
                     </label>
                   </div>
+                  <div class="form-check text-start">
+                    <input class="form-check-input" type="radio" name="multiCopyRadio" id="multiCopyUnattended">
+                    <label class="form-check-label" for="multiCopyUnattended">
+                      Evening Unattended Metering Jobs
+                    </label>
+                  </div>
 
                   <div id="multiCopyFeedback" class="alert alert-info mt-4 d-none" role="alert">
                     <span id="multiCopyCount">0</span> line(s) copied and stored.
@@ -327,7 +336,7 @@
                     <button id="multiCopyAddPage" class="btn btn-outline-primary btn-sm k-text">
                       Add Current Page to List
                     </button>
-                    <button id="multiCopyAddAndFinish" class="btn btn-outline-success btn-sm k-text">
+                    <button id="multiCopyFinish" class="btn btn-outline-success btn-sm k-text">
                       Finish & Copy Full List
                     </button>
                     <button id="multiCopyCancel" class="btn btn-outline-danger btn-sm k-text">
@@ -338,8 +347,8 @@
               </div>
 
               <div id ="multiCopyFooter" class="modal-footer">
-                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary btn-sm" id="multiCopySubmit">Continue</button>
+                <button type="button" class="btn btn-light btn-sm k-text" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm k-text" id="multiCopySubmit">Continue</button>
               </div>
             </div>
           </div>
@@ -349,7 +358,7 @@
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
       <div id="toast-container" class="k-text toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
-          <div id="toast-content" class="toast-body">10 milliomn rows copied innit extending the message to see if it fits</div>
+          <div id="toast-content" class="toast-body"></div>
           <!-- <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button> -->
         </div>
       </div>
