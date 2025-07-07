@@ -786,7 +786,7 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
                 const jobsData = [];
                 const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
 
-                const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-:r"]');
+                const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-"]');
 
                 const processedAccordions = new Set();
 
@@ -801,8 +801,8 @@ document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
 
                 jobElements.forEach((jobElement) => {
                     const id = jobElement.id;
-                    if (id && id.startsWith("accordion-:r")) {
-                        const uniqueKey = id.split("accordion-:r")[1]; 
+                    if (id && id.startsWith("accordion-")) {
+                        const uniqueKey = id.split("accordion-")[1]; 
 
                         if (processedAccordions.has(uniqueKey)) {
                             return;
