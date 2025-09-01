@@ -64,38 +64,37 @@
               <button type="button" id="copyEngineerEV" class="btn btn-outline-primary btn-sm k-text">EV Chase</button>
               <button type="button" id="copyEngineerPM" class="btn btn-outline-secondary btn-sm k-text" >PM Chase</button>
             </div>
-            <hr>
-            <h6>Unattended Appointments</h6>
-            <p class="k-text">Copy job references for unattended metering appointments</p>
-            <button type="button" id="copyUnattendedRefs_metering" class="btn btn-outline-primary btn-sm k-text">Unattended Chase</button>
-            <!--<div class="btn-group" role="group">
-              <button type="button" id="copyUnattendedRefs_metering" class="btn btn-outline-primary btn-sm ">Metering</button>
-              <button type="button" id="copyUnattendedRefs_ev" class="btn btn-outline-primary btn-sm" disabled>EV Chargers</button>
-            </div>-->
+            <hr class="d-none">
+            <h6 class="d-none">Unattended Appointments</h6>
+            <p class="k-text d-none">Copy job references for unattended metering appointments</p>
+            <button type="button" id="copyUnattendedRefs_metering" class="btn btn-outline-primary btn-sm k-text d-none">Unattended Chase</button>
             <hr>
           </div>
 
           <h6>Jeopardy List</h6>
             <p class="k-text">Copy the details of all the jobs currently showing in the scheduling window</p>
-            <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#jeopModal" class="btn btn-outline-primary btn-sm k-text">Copy Jeopardy List</button>
+            <div class="btn-group" role="group">
+              <button type="button" id="copyAllJeop" class="btn btn-outline-primary btn-sm k-text">Copy Full List</button>
+              <button type="button" id="copyJeop" data-bs-toggle="modal" data-bs-target="#jeopModal" class="btn btn-outline-primary btn-sm k-text" disabled>Custom Selection</button>
+            </div>
             <hr>
         </div>
         <!--lookup-->
-        <form class="mb-3 d-none">
-          <label for="accountJobRefLookup" class="form-label k-text">Kraken account & job reference lookup</label>
+        <form class="mb-3">
+          <label for="accountJobRefLookup" class="form-label k-text">Work Order Quick Lookup</label>
           <div class="mb-3 btn-sm">
             <input type="text" class="form-control k-text" id="accountJobRefLookup">
           </div>
         </form>
         <div id="jobRefLookupBtns" style="display:none;">
-          <button type="button" id="openJobBtn" class="btn btn-primary btn-sm">Open Job</button>
-          <button type="button" id="searchJeopardyBtn" class="btn btn-outline-primary btn-sm" disabled>Search Jeopardy</button>
+          <button type="button" id="openJobBtn" class="btn btn-primary btn-sm k-text">Open Job</button>
+          <button type="button" id="searchJeopardyBtn" class="btn btn-outline-primary btn-sm k-text" disabled>Search Jeopardy</button>
         </div>
         <div id="accLookupBtns" class="" style="display:none;">
-          <button type="button" id="openAccBtn" class="btn btn-primary btn-sm" disabled>Open Account</button>
-          <button type="button" id="searchAccKFBtn" class="btn btn-outline-primary btn-sm" disabled>Search KF</button>
+          <button type="button" id="openAccBtn" class="btn btn-primary btn-sm k-text" disabled>Open Account</button>
+          <button type="button" id="searchAccKFBtn" class="btn btn-outline-primary btn-sm k-text" disabled>Search KF</button>
         </div>
-        <hr class="d-none">
+        <hr class="">
         <!--lookup end-->
         <div id="" class="container mt-3 k-text">
           <button type="button" data-bs-toggle="modal" data-bs-target="#multiPageCopyModal" class="btn btn-light btn-sm k-text">
@@ -116,14 +115,14 @@
         </div>
         <!-- jeop modal -->
         <div class="modal fade" id="jeopModal" tabindex="-1" aria-labelledby="jeopModalLabel" aria-hidden="true">
-          <div class="modal-dialog">
+          <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Jeopardy</h5>
+                <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Copy Jeopardy</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body k-text">
-                <table class="table table-bordered">
+                <table class="table table-bordered d-none">
                   <thead>
                     <tr>
                       <th colspan="2" class="text-center">Today's Jeopardy</th>
@@ -145,49 +144,67 @@
                   </tbody>
                 </table>
                 <form id="jeopardyForm">
-                  <div class="mb-3 btn-sm">
-                    <select id="jobFilter" class="form-select btn-sm k-text" style="font-size:13px;">
-                      <option value="metering_ev">Metering & EV Chargers</option>
-                      <option value="all">All Job Types</option>
-                      <option value="metering">Metering</option>
-                      <option value="ev">EV Chargers</option>
-                      <option value="hp">Heat Pumps</option>
-                      <option value="solar">Solar</option>
+                  <fieldset class="row mb-1 text-start">
+                    <legend class="col-form-label col-sm-2 pt-0">Job Types</legend>
+                    <div class="col-sm-10">
+                      <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="jobtypeMetering" value="jobtypeMetering">
+                        <label class="form-check-label" for="jobtypeMetering">
+                          Metering
+                        </label>
+                      </div>
+                      <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox"  id="jobtypeEV" value="jobtypeEV">
+                        <label class="form-check-label" for="jobtypeEV">
+                          EV
+                        </label>
+                      </div>
+                      <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="jobtypeSolar" value="jobtypeSolar">
+                        <label class="form-check-label" for="jobtypeSolar">
+                          Solar
+                        </label>
+                      </div>
+                      <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="jobtypeASHP" value="jobtypeASHP">
+                        <label class="form-check-label" for="jobtypeASHP">
+                          Heat Pumps
+                        </label>
+                      </div>
+                    </div>
+                  </fieldset>
+                  <div class="mb-2 btn-sm text-start">
+                    <label class="form-check-label" for="dateFilter">Date</label>
+                    <input type="date" class="form-control btn-sm k-text" id="dateFilter" name="dateFilter" value="2025-08-08" min="2025-07-23" max="2025-09-23" />
+                  </div>
+                  <div class="mb-2 btn-sm text-start">
+                    <label class="form-check-label" for="timeslotFilter">Timeslot</label>
+                    <select id="timeslotFilter" class="form-select btn-sm k-text" style="font-size:13px;">
+                      <option value="all">All Timeslots</option>
+                      <option value="amOnly">AMs Only</option>
                     </select>
                   </div>
-                  <div class="form-check text-start">
-                    <input class="form-check-input" type="radio" name="jeopFormatRadio" id="default" checked>
-                    <label class="form-check-label" for="default">
-                      Default formatting for all visible dates
-                    </label>
+                  <div class="mb-2 btn-sm text-start">
+                    <label class="form-check-label" for="formatFilter">Format</label>
+                    <select id="formatFilter" class="form-select btn-sm k-text" style="font-size:13px;">
+                      <option value="default">Jeopardy Sheet (Default formatting)</option>
+                      <option value="meteringGSOS">Metering GSOS Sheet</option>
+                      <option value="evGSOS">EV GSOS/Future Cancellations Sheet</option>
+                      <!-- <option value="evFutureGSOS" disabled>EV Future Cancellations Sheet (Not in use)</option> -->
+                    </select>
                   </div>
-                  <div class="form-check text-start mb-2">
-                    <input class="form-check-input" type="radio" name="jeopFormatRadio" id="meteringAM" >
-                    <label class="form-check-label" for="meteringAM">
-                      Today's AM work formatted for the metering GSOS sheet
-                    </label>
-                  </div>
-                  <div class="form-check text-start mb-2">
-                    <input class="form-check-input" type="radio" name="jeopFormatRadio" id="meteringAD" >
-                    <label class="form-check-label" for="meteringAD">
-                      All of today's work formatted for the metering GSOS sheet
-                    </label>
-                  </div>
-                  <div class="form-check text-start">
-                    <input class="form-check-input" type="radio" name="jeopFormatRadio" id="ev" >
-                    <label class="form-check-label" for="ev">
-                      Today's work formatted for the EV GSOS sheet
-                    </label>
-                  </div>
-                  <button type="submit" class="btn btn-primary btn-sm mt-2 k-text">Copy Jeopardy List</button>
                 </form>
+              </div>
+              <div id ="" class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm k-text" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm k-text" id="copyJeopCustom">Copy Jeopardy</button>
               </div>
             </div>
           </div>
         </div>
         <!-- settings modal -->
         <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                   <div class="modal-header">
                     <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Settings</h5>
@@ -258,7 +275,7 @@
         </div>
         <!-- lookup modal -->
         <div class="modal fade" id="regionModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog">
+          <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title fs-6" id="multiPageCopyModalLabel">Lookup Tools</h5>

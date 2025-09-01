@@ -419,8 +419,10 @@ function multiCopyEngineerAppointments(mode) {
                   let jobId = "";
                   const pTags = card.querySelectorAll("p");
                   for (let p of pTags) {
-                    const text = p.textContent.trim();
-                    if (jobrefRegex.test(text)) jobId = text;
+                    let text = p.textContent.trim().replace(/Click to copy/g, '').trim();
+                    if (jobrefRegex.test(text)) {
+                      jobId = text;
+                    }
                   }
 
                   if (!jobId || jobIdsSet.has(jobId)) return;
@@ -773,168 +775,418 @@ function copyUnattendedRefs(product) {
     }
 }
 
-document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
-    event.preventDefault();
+// document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
+//     event.preventDefault();
 
-    const selectedFilter = document.getElementById("jobFilter").value;
-    const selectedFormat = document.querySelector('input[name="jeopFormatRadio"]:checked')?.id || null;
+//     const selectedFilter = document.getElementById("jobFilter").value;
+//     const selectedFormat = document.querySelector('input[name="jeopFormatRadio"]:checked')?.id || null;
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: (filter, format) => {
-                const jobsData = [];
-                const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
+//     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+//         chrome.scripting.executeScript({
+//             target: { tabId: tabs[0].id },
+//             func: (filter, format) => {
+//                 const jobsData = [];
+//                 const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
 
-                const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-"]');
+//                 const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-"]');
 
-                const processedAccordions = new Set();
+//                 const processedAccordions = new Set();
 
-                function copyToClipboardFallback(text) {
-                    const tempTextArea = document.createElement('textarea');
-                    tempTextArea.value = text;
-                    document.body.appendChild(tempTextArea);
-                    tempTextArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempTextArea);
-                }
+//                 function copyToClipboardFallback(text) {
+//                     const tempTextArea = document.createElement('textarea');
+//                     tempTextArea.value = text;
+//                     document.body.appendChild(tempTextArea);
+//                     tempTextArea.select();
+//                     document.execCommand('copy');
+//                     document.body.removeChild(tempTextArea);
+//                 }
 
-                jobElements.forEach((jobElement) => {
-                    const id = jobElement.id;
-                    if (id && id.startsWith("accordion-")) {
-                        const uniqueKey = id.split("accordion-")[1]; 
+//                 jobElements.forEach((jobElement) => {
+//                     const id = jobElement.id;
+//                     if (id && id.startsWith("accordion-")) {
+//                         const uniqueKey = id.split("accordion-")[1]; 
 
-                        if (processedAccordions.has(uniqueKey)) {
-                            return;
-                        }
-                        processedAccordions.add(uniqueKey);
-                    }
+//                         if (processedAccordions.has(uniqueKey)) {
+//                             return;
+//                         }
+//                         processedAccordions.add(uniqueKey);
+//                     }
 
-                    const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
+//                     const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
 
-                    const jobTitleElement = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(1)');
-                    const jobSkillsElement = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(3)');
-                    const jobRefElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(1) > p:nth-of-type(1)');
-                    const jobPostcodeElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(2) > p:nth-of-type(1)');
-                    const jobTimeSlotElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)');
+//                     const jobTitleElement = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(1)');
+//                     const jobSkillsElement = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(3)');
+//                     const jobRefElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(1) > p:nth-of-type(1)');
+//                     const jobPostcodeElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(2) > p:nth-of-type(1)');
+//                     const jobTimeSlotElement = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)');
 
-                    const jobTitle = removeClickToCopy(jobTitleElement?.textContent.trim() || "");
-                    const jobSkills = removeClickToCopy(jobSkillsElement?.textContent.trim() || "");
-                    const jobRef = removeClickToCopy(jobRefElement?.textContent.trim() || "");
-                    const jobPostcode = removeClickToCopy(jobPostcodeElement?.textContent.trim() || "");
-                    const jobTimeSlot = removeClickToCopy(jobTimeSlotElement?.textContent.trim() || "");
+//                     const jobTitle = removeClickToCopy(jobTitleElement?.textContent.trim() || "");
+//                     const jobSkills = removeClickToCopy(jobSkillsElement?.textContent.trim() || "");
+//                     const jobRef = removeClickToCopy(jobRefElement?.textContent.trim() || "");
+//                     const jobPostcode = removeClickToCopy(jobPostcodeElement?.textContent.trim() || "");
+//                     const jobTimeSlot = removeClickToCopy(jobTimeSlotElement?.textContent.trim() || "");
 
-                    let jobDate = "";
-                    const pElements = jobElement.querySelectorAll("p");
-                    pElements.forEach((pElement) => {
-                        const text = pElement.textContent.trim();
-                        if (dateRegex.test(text)) {
-                            jobDate = text;
-                        }
-                    });
+//                     let jobDate = "";
+//                     const pElements = jobElement.querySelectorAll("p");
+//                     pElements.forEach((pElement) => {
+//                         const text = pElement.textContent.trim();
+//                         if (dateRegex.test(text)) {
+//                             jobDate = text;
+//                         }
+//                     });
 
-                    const includeJob = (filter === "all") || 
-                        (filter === "metering" && !jobTitle.includes("EV ") && !jobTitle.includes("Heat Pump ") && !jobTitle.includes("Solar ")) ||
-                        (filter === "metering_ev" && !jobTitle.includes("Heat Pump ") && !jobTitle.includes("Solar ")) ||
-                        (filter === "ev" && jobTitle.includes("EV ")) ||
-                        (filter === "hp" && jobTitle.includes("Heat Pump ")) ||
-                        (filter === "solar" && jobTitle.includes("Solar "));
+//                     const includeJob = (filter === "all") || 
+//                         (filter === "metering" && !jobTitle.includes("EV ") && !jobTitle.includes("Heat Pump ") && !jobTitle.includes("Solar ")) ||
+//                         (filter === "metering_ev" && !jobTitle.includes("Heat Pump ") && !jobTitle.includes("Solar ")) ||
+//                         (filter === "ev" && jobTitle.includes("EV ")) ||
+//                         (filter === "hp" && jobTitle.includes("Heat Pump ")) ||
+//                         (filter === "solar" && jobTitle.includes("Solar "));
 
-                    if (includeJob) {
-                        jobsData.push({
-                            postcode: jobPostcode,
-                            reference: jobRef,
-                            jobtype: jobTitle,
-                            date: jobDate,
-                            timeslot: jobTimeSlot,
-                            datetime: jobDate + " " + jobTimeSlot,
-                            skills: jobSkills || "",
-                        });
-                    }
-                });
+//                     if (includeJob) {
+//                         jobsData.push({
+//                             postcode: jobPostcode,
+//                             reference: jobRef,
+//                             jobtype: jobTitle,
+//                             date: jobDate,
+//                             timeslot: jobTimeSlot,
+//                             datetime: jobDate + " " + jobTimeSlot,
+//                             skills: jobSkills || "",
+//                         });
+//                     }
+//                 });
 
-                if (jobsData.length === 0) {
-                    alert("No jobs found in the scheduling window.");
-                    return;
-                }
+//                 if (jobsData.length === 0) {
+//                     alert("No jobs found in the scheduling window.");
+//                     return;
+//                 }
 
-                let jobDataText = "";
+//                 let jobDataText = "";
 
-                if (format === "default") {
-                    jobDataText = jobsData
-                        .map(job => `${job.postcode}\t${job.reference}\t${job.jobtype}\t${job.datetime}\t${job.skills}`)
-                        .join('\n');
+//                 if (format === "default") {
+//                     jobDataText = jobsData
+//                         .map(job => `${job.postcode}\t${job.reference}\t${job.jobtype}\t${job.datetime}\t${job.skills}`)
+//                         .join('\n');
 
-                    copyToClipboardFallback(jobDataText);
-                    alert(`${jobsData.length} job(s) copied to clipboard.`);
+//                     copyToClipboardFallback(jobDataText);
+//                     alert(`${jobsData.length} job(s) copied to clipboard.`);
 
-                } else if (format === "meteringAM") {
-                    const today = new Date();
-                    const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+//                 } else if (format === "meteringAM") {
+//                     const today = new Date();
+//                     const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
 
-                    const meteringAMJobs = jobsData.filter(job => 
-                        job.date.startsWith(todayFormatted) && job.timeslot === ('AM') && !job.jobtype.includes('EV') && !job.jobtype.includes('solar') && !job.jobtype.includes('heat pump')
-                    );
+//                     const meteringAMJobs = jobsData.filter(job => 
+//                         job.date.startsWith(todayFormatted) && job.timeslot === ('AM') && !job.jobtype.includes('EV') && !job.jobtype.includes('solar') && !job.jobtype.includes('heat pump')
+//                     );
 
-                    console.table(meteringAMJobs);
+//                     console.table(meteringAMJobs);
 
-                    jobDataText = meteringAMJobs
-                        .map(job => {
-                            const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
-                            const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
-                            return `${job.reference}\t\t${todayFormattedDDMMYYYY}\t${todayDayName}\tInstaller Cancellation`;
-                        })
-                        .join('\n');
+//                     jobDataText = meteringAMJobs
+//                         .map(job => {
+//                             const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
+//                             const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
+//                             return `${job.reference}\t\t${todayFormattedDDMMYYYY}\t${todayDayName}\tInstaller Cancellation`;
+//                         })
+//                         .join('\n');
 
-                    copyToClipboardFallback(jobDataText);
-                    alert(`${meteringAMJobs.length} AM job(s) copied for the metering GSOS sheet.`);
+//                     copyToClipboardFallback(jobDataText);
+//                     alert(`${meteringAMJobs.length} AM job(s) copied for the metering GSOS sheet.`);
 
-                } else if (format === "meteringAD"){
-                    const today = new Date();
-                    const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+//                 } else if (format === "meteringAD"){
+//                     const today = new Date();
+//                     const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
 
-                    const meteringADJobs = jobsData.filter(job => 
-                        job.date.startsWith(todayFormatted) && !job.jobtype.includes('EV') && !job.jobtype.includes('solar') && !job.jobtype.includes('heat pump')
-                    );
+//                     const meteringADJobs = jobsData.filter(job => 
+//                         job.date.startsWith(todayFormatted) && !job.jobtype.includes('EV') && !job.jobtype.includes('solar') && !job.jobtype.includes('heat pump')
+//                     );
 
-                    console.table(meteringADJobs);
+//                     console.table(meteringADJobs);
 
-                    jobDataText = meteringADJobs
-                        .map(job => {
-                            const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
-                            const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
-                            return `${job.reference}\t\t${todayFormattedDDMMYYYY}\t${todayDayName}\tInstaller Cancellation`;
-                        })
-                        .join('\n');
+//                     jobDataText = meteringADJobs
+//                         .map(job => {
+//                             const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
+//                             const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
+//                             return `${job.reference}\t\t${todayFormattedDDMMYYYY}\t${todayDayName}\tInstaller Cancellation`;
+//                         })
+//                         .join('\n');
 
-                    copyToClipboardFallback(jobDataText);
-                    alert(`Copied ${meteringADJobs.length} job(s) scheduled for today & formatted for the metering GSOS sheet.`);
-                } else if (format === "ev"){
-                    const today = new Date();
-                    const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+//                     copyToClipboardFallback(jobDataText);
+//                     alert(`Copied ${meteringADJobs.length} job(s) scheduled for today & formatted for the metering GSOS sheet.`);
+//                 } else if (format === "ev"){
+//                     const today = new Date();
+//                     const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
 
-                    const evJobs = jobsData.filter(job => 
-                        job.date.startsWith(todayFormatted) && job.jobtype.includes('EV')
-                    );
+//                     const evJobs = jobsData.filter(job => 
+//                         job.date.startsWith(todayFormatted) && job.jobtype.includes('EV')
+//                     );
 
-                    console.table(evJobs);
+//                     console.table(evJobs);
 
-                    jobDataText = evJobs
-                        .map(job => {
-                            const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
-                            const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
-                            return `${job.reference}\t${job.postcode}\t${todayFormattedDDMMYYYY}\t${todayDayName}`;
-                        })
-                        .join('\n');
+//                     jobDataText = evJobs
+//                         .map(job => {
+//                             const todayFormattedDDMMYYYY = today.toLocaleDateString('en-GB');
+//                             const todayDayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
+//                             return `${job.reference}\t${job.postcode}\t${todayFormattedDDMMYYYY}\t${todayDayName}`;
+//                         })
+//                         .join('\n');
 
-                    copyToClipboardFallback(jobDataText);
-                    alert(`Copied ${evJobs.length} job(s) scheduled for today & formatted for the EV GSOS sheet.`);
-                }
-            },
-            args: [selectedFilter, selectedFormat]
+//                     copyToClipboardFallback(jobDataText);
+//                     alert(`Copied ${evJobs.length} job(s) scheduled for today & formatted for the EV GSOS sheet.`);
+//                 }
+//             },
+//             args: [selectedFilter, selectedFormat]
+//         });
+//     });
+// });
+
+
+function copyJeopardyJobs(params) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tab = tabs[0];
+
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      args: [params],
+      func: function (params) {
+        const {
+          jobtypeSelections,
+          dateFilter,
+          timeslotFilter,
+          format,
+          copyAll
+        } = params;
+
+        //console.log(jobtypeSelections);
+
+        const jobsData = [];
+        const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
+
+        const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-"]');
+        const processedAccordions = new Set();
+
+        const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
+
+        function copyToClipboardFallback(text) {
+          const tempTextArea = document.createElement('textarea');
+          tempTextArea.value = text;
+          document.body.appendChild(tempTextArea);
+          tempTextArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempTextArea);
+        }
+
+        function formatDateFromKF(dateStr) {
+          const date = new Date(dateStr);
+          if (isNaN(date)) return "";
+          const day = date.getDate();
+          const month = date.toLocaleString("en-GB", { month: "short" }).slice(0, 3);
+          return `${day} ${month}`;
+        }
+
+
+        function getWeekdayFromKFDate(dateStr) {
+          const parts = dateStr.split(" ");
+          if (parts.length !== 2) return "";
+          const day = parseInt(parts[0], 10);
+          const month = parts[1];
+          const fullDateStr = `${day} ${month} ${new Date().getFullYear()}`;
+          const parsedDate = new Date(fullDateStr);
+          if (isNaN(parsedDate)) return "";
+          return parsedDate.toLocaleDateString("en-GB", { weekday: "long" });
+        }
+
+        jobElements.forEach((jobElement) => {
+          const id = jobElement.id;
+          if (id?.startsWith("accordion-")) {
+            const uniqueKey = id.split("accordion-")[1];
+            if (processedAccordions.has(uniqueKey)) return;
+            processedAccordions.add(uniqueKey);
+          }
+
+          function removeClickToCopy(text) {
+            return text.replace(/Click to copy/gi, '').trim();
+          }
+
+          const jobTitleEl = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(1)');
+          const jobSkillsEl = jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(3)');
+          const jobRefEl = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(1) > p:nth-of-type(1)');
+          const jobPostcodeEl = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(2) > p:nth-of-type(1)');
+          const jobTimeSlotEl = jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)');
+
+          const jobTitle = removeClickToCopy(jobTitleEl?.textContent.trim() || "");
+          const jobSkills = removeClickToCopy(jobSkillsEl?.textContent.trim() || "");
+          const jobRef = removeClickToCopy(jobRefEl?.textContent.trim() || "");
+          const jobPostcode = removeClickToCopy(jobPostcodeEl?.textContent.trim() || "");
+          const jobTimeSlot = removeClickToCopy(jobTimeSlotEl?.textContent.trim() || "");
+
+
+          let jobDate = "";
+          jobElement.querySelectorAll("p").forEach((p) => {
+            let text = p.textContent.trim().replace(/Click to copy/g, '').trim();
+            if (dateRegex.test(text)) {
+              jobDate = text;
+            }
+          });
+
+
+          const lowerTitle = jobTitle.toLowerCase();
+          const jobTypeValid =
+            (jobtypeSelections.metering && !lowerTitle.includes("ev") && !lowerTitle.includes("heat pump") && !lowerTitle.includes("solar")) ||
+            (jobtypeSelections.ev && lowerTitle.includes("ev")) ||
+            (jobtypeSelections.ashp && lowerTitle.includes("heat pump")) ||
+            (jobtypeSelections.solar && lowerTitle.includes("solar"));
+
+          const dateMatches = !dateFilter || jobDate === formatDateFromKF(dateFilter);
+          const timeslotMatches = timeslotFilter === "all" || jobTimeSlot === "AM";
+
+          if (copyAll || (jobTypeValid && dateMatches && timeslotMatches)) {
+            jobsData.push({
+              postcode: jobPostcode,
+              reference: jobRef,
+              jobtype: jobTitle,
+              date: jobDate,
+              timeslot: jobTimeSlot,
+              datetime: `${jobDate} ${jobTimeSlot}`,
+              skills: jobSkills || "",
+            });
+          }
         });
+
+        if (jobsData.length === 0) {
+          chrome.runtime.sendMessage({
+            type: 'SHOW_TOAST',
+            message: `No jobs matched your criteria.`,
+            toastType: 'danger',
+            closeModal: false
+          });
+          return;
+        }
+
+        let jobDataText = "";
+
+        if (copyAll || format === "default") {
+          jobDataText = jobsData
+            .map(job => `${job.postcode}\t${job.reference}\t${job.jobtype}\t${job.datetime}\t${job.skills}`)
+            .join('\n');
+          copyToClipboardFallback(jobDataText);
+          chrome.runtime.sendMessage({
+            type: 'SHOW_TOAST',
+            message: `${jobsData.length} job(s) copied to clipboard.`,
+            toastType: 'success',
+            closeModal: true
+          });
+        } else if (format === "meteringGSOS") {
+          const today = new Date();
+          const todayStr = today.toLocaleDateString('en-GB');
+          const dayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
+          const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
+
+          console.table(jobsData);
+
+          // const filtered = jobsData.filter(job =>
+          //   !job.jobtype.toLowerCase().includes('ev') &&
+          //   !job.jobtype.toLowerCase().includes('solar') &&
+          //   !job.jobtype.toLowerCase().includes('heat pump') &&
+          //   !job.jobtype.toLowerCase().includes('epc') &&
+          //   !job.jobtype.toLowerCase().includes('electrode')
+          // );
+
+          jobDataText = jobsData
+            .map(job => `${job.reference}\t\t${job.date}\t${dayName}\tInstaller Cancellation`)
+            .join('\n');
+          copyToClipboardFallback(jobDataText);
+          chrome.runtime.sendMessage({
+            type: 'SHOW_TOAST',
+            message: `${jobsData.length} job(s) copied for the metering GSOS sheet.`,
+            toastType: 'success',
+            closeModal: true
+          });
+        } else if (format === "evGSOS") {
+
+          const evJobs = jobsData.filter(job =>
+            job.jobtype.toLowerCase().includes('ev')
+          );
+
+          jobDataText = evJobs
+            .map(job => {
+              const dayName = getWeekdayFromKFDate(job.date);
+              return `${job.reference}\t${job.postcode}\t${job.date}\t${dayName}`;
+            })
+            .join('\n');
+
+          chrome.runtime.sendMessage({
+            type: 'SHOW_TOAST',
+            message: `${evJobs.length} job(s) copied for the EV GSOS sheet.`,
+            toastType: 'success',
+            closeModal: true
+          });
+
+          // chrome.runtime.sendMessage({
+          //   type: 'SHOW_TOAST',
+          //   message: `${evJobs.length} job(s) copied for metering GSOS sheet.`
+          // });
+
+          copyToClipboardFallback(jobDataText);
+          //alert(`${evJobs.length} job(s) copied for EV GSOS sheet.`);
+
+
+
+        } else if (format === "evFutureGSOS") { // unused?
+          const evFutureJobs = jobsData.filter(job => job.jobtype.toLowerCase().includes('ev'));
+
+          jobDataText = evFutureJobs
+            .map(job => `${job.reference}\t${job.postcode}\t${job.date}\t${job.timeslot}`)
+            .join('\n');
+          copyToClipboardFallback(jobDataText);
+          alert(`${evFutureJobs.length} EV future job(s) copied.`);
+        }
+      }
     });
+  });
+}
+
+document.getElementById("copyJeopCustom").addEventListener("click", () => {
+  const jobtypeSelections = {
+    metering: document.getElementById("jobtypeMetering").checked,
+    ev: document.getElementById("jobtypeEV").checked,
+    solar: document.getElementById("jobtypeSolar").checked,
+    ashp: document.getElementById("jobtypeASHP").checked,
+  };
+
+  const isAnySelected = Object.values(jobtypeSelections).some(val => val);
+
+  if (!isAnySelected) {
+    showToast("Please select at least one job type.", "warning");
+    return;
+  }
+
+  const dateFilter = document.getElementById("dateFilter").value;
+  const timeslotFilter = document.getElementById("timeslotFilter").value;
+  const format = document.getElementById("formatFilter").value;
+
+  copyJeopardyJobs({
+    jobtypeSelections,
+    dateFilter,
+    timeslotFilter,
+    format,
+    copyAll: false,
+  });
 });
+
+document.getElementById("copyAllJeop").addEventListener("click", () => {
+  copyJeopardyJobs({
+    jobtypeSelections: {
+      metering: true,
+      ev: true,
+      solar: true,
+      ashp: true,
+    },
+    dateFilter: null,          // Irrelevant when copyAll is true
+    timeslotFilter: "all",     // Irrelevant when copyAll is true
+    format: "default",         // Force default formatting
+    copyAll: true,             // Skip all filters
+  });
+});
+
 
 document.getElementById("regionPostcodeCheck").addEventListener("input", async function () {
     const input = this.value.trim().toUpperCase();
@@ -993,79 +1245,6 @@ function quickLookup(input, action) {
     }
   
 }
-
-document.getElementById("copyJeop").addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: () => {
-                const jobsData = [];
-                const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
-                const today = new Date();
-                const todayFormatted = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'short' })}`;
-            
-                const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-:r"]');
-                const processedAccordions = new Set();
-            
-                jobElements.forEach((jobElement) => {
-                    const id = jobElement.id;
-                    if (id && id.startsWith("accordion-:r")) {
-                        const uniqueKey = id.split("accordion-:r")[1];
-                        if (processedAccordions.has(uniqueKey)) return;
-                        processedAccordions.add(uniqueKey);
-                    }
-            
-                    const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
-                    const jobTitle = removeClickToCopy(jobElement.querySelector('div > div > div:nth-of-type(1) > p:nth-of-type(1)')?.textContent || "");
-                    const jobTimeSlot = removeClickToCopy(jobElement.querySelector('div > div > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)')?.textContent || "");
-            
-                    let jobDate = "";
-                    jobElement.querySelectorAll("p").forEach((p) => {
-                        const text = p.textContent.trim();
-                        if (dateRegex.test(text)) jobDate = text;
-                    });
-            
-                    jobsData.push({
-                        jobtype: jobTitle,
-                        date: jobDate,
-                        timeslot: jobTimeSlot
-                    });
-                });
-            
-                const allToday = jobsData.filter(job => job.date.startsWith(todayFormatted));
-                const evToday = allToday.filter(job => job.jobtype.toLowerCase().includes("ev"));
-            
-                return {
-                    all: allToday.length,
-                    ev: evToday.length,
-                    jobs: jobsData,
-                    todayFormatted: todayFormatted
-                };
-            }            
-        }, (injectionResults) => {
-            const result = injectionResults[0]?.result;
-            if (!result) {
-                console.error("No data returned from script.");
-                return;
-            }
-        
-            document.getElementById("jeopCountALL").textContent = result.all;
-            document.getElementById("jeopCountEV").textContent = result.ev;
-        
-            const excludeKeywords = ["heat pump ", "solar ", "ev ", "electrode", "epc"];
-            const isExcluded = (title) =>
-                excludeKeywords.some(keyword => title.toLowerCase().includes(keyword));
-        
-            const meteringJobs = result.jobs.filter(job =>
-                job.date.startsWith(result.todayFormatted) && !isExcluded(job.jobtype)
-            );
-            const meteringAMJobs = meteringJobs.filter(job => job.timeslot === 'AM');
-        
-            document.getElementById("jeopCountAM").textContent =
-                `${meteringJobs.length} (${meteringAMJobs.length} AMs)`;
-        });
-    });
-});
 
 document.getElementById("copyEngineerAM").addEventListener("click", () => {
     copyEngineerAppointments("AM");
@@ -1178,6 +1357,52 @@ document.getElementById('multiCopyCancel').addEventListener('click', () => {
         location.reload();
       }, 2000);
     });
+});
+
+document.getElementById("copyJeop").addEventListener("click", () => {
+  const dateInput = document.getElementById("dateFilter");
+  const today = new Date();
+  const formatDate = (date) => date.toISOString().split('T')[0];
+
+  dateInput.value = formatDate(today);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 2);
+  dateInput.min = formatDate(yesterday);
+
+  const maxDate = new Date(today);
+  maxDate.setDate(today.getDate() + 31);
+  dateInput.max = formatDate(maxDate);
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "showToast") {
+    const { text, toastType = "", closeModal = false } = message;
+
+    showToast(text, toastType);
+
+    if (closeModal) {
+      const modalEl = document.querySelector('.modal.show');
+      if (modalEl) {
+        const bsModal = bootstrap.Modal.getInstance(modalEl);
+        bsModal?.hide();
+      }
+    }
+  }
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'SHOW_TOAST' && typeof showToast === 'function') {
+    const { message, toastType, closeModal } = request;
+    showToast(message, toastType);
+
+    if (closeModal) {
+      const modalEl = document.querySelector('.modal.show');
+      if (modalEl) {
+        const bsModal = bootstrap.Modal.getInstance(modalEl);
+        bsModal?.hide();
+      }
+    }
+  }
 });
 
 function showToast(message, type = 'primary') {
