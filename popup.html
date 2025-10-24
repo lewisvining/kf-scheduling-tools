@@ -108,13 +108,13 @@
           </button>
           <a class="btn btn-outline-primary btn-sm icon-link icon-link-hover k-text" href="https://field.oes-prod.energy/scheduling" id="error" target="_blank" style="display:none;">
             KF Scheduling
-            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">  
+            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16">  
               <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
             </svg>
           </a>
         </div>
         <!-- jeop modal -->
-        <div class="modal fade" id="jeopModal" tabindex="-1" aria-labelledby="jeopModalLabel" aria-hidden="true">
+        <div class="modal fade" id="jeopModal" tabindex="-1" aria-labelledby="jeopModalLabel">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
@@ -185,12 +185,12 @@
                     </select>
                   </div>
                   <div class="mb-2 btn-sm text-start">
-                    <label class="form-check-label" for="formatFilter">Format</label>
+                    <label class="form-check-label" for="formatFilter">Sheet Format</label>
                     <select id="formatFilter" class="form-select btn-sm k-text" style="font-size:13px;">
-                      <option value="default">Jeopardy Sheet (Default formatting)</option>
-                      <option value="meteringGSOS">Metering GSOS Sheet</option>
+                      <option value="default">Jeopardy Sheet</option>
+                      <!-- <option value="meteringGSOS-OLD">Metering GSOS Sheet (Old Format)</option> -->
+                      <option value="meteringGSOS" selected>Metering GSOS Sheet</option>
                       <option value="evGSOS">EV GSOS/Future Cancellations Sheet</option>
-                      <!-- <option value="evFutureGSOS" disabled>EV Future Cancellations Sheet (Not in use)</option> -->
                     </select>
                   </div>
                 </form>
@@ -274,7 +274,7 @@
             </div>
         </div>
         <!-- lookup modal -->
-        <div class="modal fade" id="regionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="regionModal" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
@@ -295,7 +295,7 @@
           </div>
         </div>
          <!-- multipage copy -->
-        <div class="modal fade" id="multiPageCopyModal" tabindex="-1" aria-labelledby="multiPageCopyModalLabel" aria-hidden="true">
+        <div class="modal fade" id="multiPageCopyModal" tabindex="-1" aria-labelledby="multiPageCopyModalLabel">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow">
               <div class="modal-header">
@@ -330,7 +330,7 @@
                   <div class="form-check text-start">
                     <input class="form-check-input" type="radio" name="multiCopyRadio" id="multiCopyUnattended">
                     <label class="form-check-label" for="multiCopyUnattended">
-                      Evening Unattended Metering Jobs
+                      Unattended Metering Jobs
                     </label>
                   </div>
 

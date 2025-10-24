@@ -774,8 +774,6 @@ function copyUnattendedRefs(product) {
         return companyMap[companies] || companies;
     }
 }
-
-// document.getElementById("jeopardyForm").addEventListener("submit", (event) => {
 //     event.preventDefault();
 
 //     const selectedFilter = document.getElementById("jobFilter").value;
@@ -955,8 +953,6 @@ function copyJeopardyJobs(params) {
           copyAll
         } = params;
 
-        //console.log(jobtypeSelections);
-
         const jobsData = [];
         const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
 
@@ -974,7 +970,7 @@ function copyJeopardyJobs(params) {
           document.body.removeChild(tempTextArea);
         }
 
-        function formatDateFromKF(dateStr) {
+        function formatDateToKF(dateStr) {
           const date = new Date(dateStr);
           if (isNaN(date)) return "";
           const day = date.getDate();
@@ -982,16 +978,26 @@ function copyJeopardyJobs(params) {
           return `${day} ${month}`;
         }
 
+        function formatDateFromKF(kfDateStr, year = new Date().getFullYear()) {
+          if (!kfDateStr) return "";
+          const [dayStr, monthStr] = kfDateStr.trim().split(" ");
+          if (!dayStr || !monthStr) return "";
+          const monthIndex = new Date(`${monthStr} 1, ${year}`).getMonth();
+          if (isNaN(monthIndex)) return "";
+          const date = new Date(year, monthIndex, parseInt(dayStr, 10));
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          return `${yyyy}-${mm}-${dd}`;
+        }
 
-        function getWeekdayFromKFDate(dateStr) {
-          const parts = dateStr.split(" ");
-          if (parts.length !== 2) return "";
-          const day = parseInt(parts[0], 10);
-          const month = parts[1];
-          const fullDateStr = `${day} ${month} ${new Date().getFullYear()}`;
-          const parsedDate = new Date(fullDateStr);
-          if (isNaN(parsedDate)) return "";
-          return parsedDate.toLocaleDateString("en-GB", { weekday: "long" });
+        function getDayNameFromDate(dateStr) {
+          if (!dateStr) return "";
+
+          const date = new Date(dateStr);
+          if (isNaN(date)) return "";
+
+          return date.toLocaleDateString("en-GB", { weekday: "long" });
         }
 
         jobElements.forEach((jobElement) => {
@@ -1035,7 +1041,7 @@ function copyJeopardyJobs(params) {
             (jobtypeSelections.ashp && lowerTitle.includes("heat pump")) ||
             (jobtypeSelections.solar && lowerTitle.includes("solar"));
 
-          const dateMatches = !dateFilter || jobDate === formatDateFromKF(dateFilter);
+          const dateMatches = !dateFilter || jobDate === formatDateToKF(dateFilter);
           const timeslotMatches = timeslotFilter === "all" || jobTimeSlot === "AM";
 
           if (copyAll || (jobTypeValid && dateMatches && timeslotMatches)) {
@@ -1074,7 +1080,8 @@ function copyJeopardyJobs(params) {
             toastType: 'success',
             closeModal: true
           });
-        } else if (format === "meteringGSOS") {
+        } else if (format === "meteringGSOS-OLD") {
+          // Old GSOS sheet format, incorrect weekday selection
           const today = new Date();
           const todayStr = today.toLocaleDateString('en-GB');
           const dayName = today.toLocaleDateString('en-GB', { weekday: 'long' });
@@ -1082,16 +1089,19 @@ function copyJeopardyJobs(params) {
 
           console.table(jobsData);
 
-          // const filtered = jobsData.filter(job =>
-          //   !job.jobtype.toLowerCase().includes('ev') &&
-          //   !job.jobtype.toLowerCase().includes('solar') &&
-          //   !job.jobtype.toLowerCase().includes('heat pump') &&
-          //   !job.jobtype.toLowerCase().includes('epc') &&
-          //   !job.jobtype.toLowerCase().includes('electrode')
-          // );
-
           jobDataText = jobsData
             .map(job => `${job.reference}\t\t${job.date}\t${dayName}\tInstaller Cancellation`)
+            .join('\n');
+          copyToClipboardFallback(jobDataText);
+          chrome.runtime.sendMessage({
+            type: 'SHOW_TOAST',
+            message: `${jobsData.length} job(s) copied for the metering GSOS sheet.`,
+            toastType: 'success',
+            closeModal: true
+          });
+        } else if (format === "meteringGSOS") {
+          jobDataText = jobsData
+            .map(job => `${job.reference}\t${job.postcode}\t${formatDateFromKF(job.date)}\t${getDayNameFromDate(formatDateFromKF(job.date))}\t\t\t${job.skills}`)
             .join('\n');
           copyToClipboardFallback(jobDataText);
           chrome.runtime.sendMessage({
@@ -1108,8 +1118,7 @@ function copyJeopardyJobs(params) {
 
           jobDataText = evJobs
             .map(job => {
-              const dayName = getWeekdayFromKFDate(job.date);
-              return `${job.reference}\t${job.postcode}\t${job.date}\t${dayName}`;
+              return `${job.reference}\t${job.postcode}\t${formatDateFromKF(job.date)}\t${getDayNameFromDate(formatDateFromKF(job.date))}`;
             })
             .join('\n');
 
@@ -1366,7 +1375,7 @@ document.getElementById("copyJeop").addEventListener("click", () => {
 
   dateInput.value = formatDate(today);
   const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 2);
+  yesterday.setDate(today.getDate() - 14);
   dateInput.min = formatDate(yesterday);
 
   const maxDate = new Date(today);
