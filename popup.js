@@ -1200,24 +1200,30 @@ document.getElementById("copyAllJeop").addEventListener("click", () => {
 document.getElementById("regionPostcodeCheck").addEventListener("input", async function () {
     const input = this.value.trim().toUpperCase();
 
-    const match = input.match(/^([A-Z]{1,2})\d?/);
+    const match = input.match(/^([A-Z]{1,2}\d[A-Z0-9]?)?/);
 
-    if (match) {
-        const postcodeArea = match[1];
+    if (match && match[1]) {
+        const outcode = match[1];  
         const outputRegion = document.getElementById("regionPostcodeOut");
         const outputBorders = document.getElementById("borderPostcodeOut");
 
-        const response = await fetch("postcode_borders.json");
-        const postcodeAdjacency = await response.json();
+        const regionResponse = await fetch("outcode_regions.json");
+        const regionData = await regionResponse.json();
+        const regionAreas = regionData.regions;  
+
+        const adjacencyResponse = await fetch("postcode_borders.json");
+        const postcodeAdjacency = await adjacencyResponse.json();
 
         let foundRegion = null;
+
         for (const [region, codes] of Object.entries(regionAreas)) {
-            if (codes.includes(postcodeArea)) {
+            if (codes.includes(outcode)) {
                 foundRegion = region;
                 break;
             }
         }
 
+        const postcodeArea = outcode.match(/^[A-Z]{1,2}/)[0];
         const neighbours = postcodeAdjacency[postcodeArea] || [];
 
         if (foundRegion) {
