@@ -314,7 +314,6 @@ function copyEngineerAppointments(mode) {
                       excludedJobType = true;
                       return;
                     }
-                    console.log(appt.slot);
                     if (!appt.attended && (mode === "PM" ? ["AM", "AD", "PM"].includes(appt.slot) : appt.slot === mode)) {
                         hasUnattended = true;
                     }
@@ -349,8 +348,7 @@ function copyEngineerAppointments(mode) {
                     }
                   } else if (hasAbortedEV) {
                     label = "[Aborted EV install - available for jeopardy]";
-                  } else {console.log(hasUnattended);}
-                  
+                  } 
   
                   if (label) {
                     identifiedEngineersCount++;
@@ -819,7 +817,7 @@ function copyJeopardyJobs(params) {
         const jobsData = [];
         const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
 
-        const jobElements = document.querySelectorAll('div[data-testid="draggable-job-requirement"], [id^="accordion-"]');
+        const jobElements = document.querySelectorAll('div[data-testid="draggable-work-order-requirement"], [id^="accordion-"]');
         const processedAccordions = new Set();
 
         const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
