@@ -31,10 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentVersion !== remoteVersion) {
             const comparison = compareVersions(currentVersion, remoteVersion);
             if (comparison > 0) {
-                document.getElementById('versionNotice').textContent = 'Experimental';
+                document.getElementById('versionNotice').textContent = 'Pre-release';
                 document.getElementById('versionNotice').style.display = 'block';
             } else if (comparison < 0) {
                 document.getElementById('versionNotice').style.display = 'block';
+                document.querySelector('.clp').textContent = "download v" + remoteVersion;
             }
             console.log(`Version mismatch: installed(${currentVersion}), remote(${remoteVersion})`);
         }
@@ -817,7 +818,7 @@ function copyJeopardyJobs(params) {
         const jobsData = [];
         const dateRegex = /^\d{1,2} [A-Za-z]{3}/;
 
-        const jobElements = document.querySelectorAll('div[data-testid="draggable-work-order-requirement"], [id^="accordion-"]');
+        const jobElements = document.querySelectorAll('div[data-appointment-requirement-id], [id^="accordion-"]');
         const processedAccordions = new Set();
 
         const removeClickToCopy = (text) => text.replace("Click to copy", "").trim();
