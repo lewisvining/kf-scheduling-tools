@@ -967,8 +967,12 @@ function copyJeopardyJobs(params) {
           });
         } else if (format === "meteringGSOS") {
           jobDataText = jobsData
-            .map(job => `${job.reference}\t${job.postcode}\t${formatDateFromKF(job.date)}\t${getDayNameFromDate(formatDateFromKF(job.date))}\t\t\t${job.skills}`)
-            .join('\n');
+          .map(job => `${job.reference}\t${job.postcode}\t${formatDateFromKF(job.date)}\t${getDayNameFromDate(formatDateFromKF(job.date))}\t\t\t${
+            job.jobtype && job.jobtype.includes("Communications Hub Exchange")
+              ? job.jobtype
+              : job.skills
+          }`)
+          .join('\n');
           copyToClipboardFallback(jobDataText);
           chrome.runtime.sendMessage({
             type: 'SHOW_TOAST',
