@@ -143,31 +143,31 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStorage(utilSheetDataSwitchElement.checked);
     });
 
-    const noSleepSwitchElement = document.getElementById("noSleepSwitch");
+    // const noSleepSwitchElement = document.getElementById("noSleepSwitch");
 
-    function updateNoSleepStorage(value) {
-      chrome.storage.local.set({ switch_nosleep: value }, () => {
-        console.log("switch_nosleep updated:", value);
-      });
+    // function updateNoSleepStorage(value) {
+    //   chrome.storage.local.set({ switch_nosleep: value }, () => {
+    //     console.log("switch_nosleep updated:", value);
+    //   });
 
-      chrome.runtime.sendMessage({
-        type: "SET_NO_SLEEP",
-        enabled: value
-      });
-    }
+    //   chrome.runtime.sendMessage({
+    //     type: "SET_NO_SLEEP",
+    //     enabled: value
+    //   });
+    // }
 
-    chrome.storage.local.get("switch_nosleep", (data) => {
-      if (data.switch_nosleep === undefined) {
-        updateNoSleepStorage(false);
-        noSleepSwitchElement.checked = false;
-      } else {
-        noSleepSwitchElement.checked = data.switch_nosleep;
-      }
-    });
+    // chrome.storage.local.get("switch_nosleep", (data) => {
+    //   if (data.switch_nosleep === undefined) {
+    //     updateNoSleepStorage(false);
+    //     noSleepSwitchElement.checked = false;
+    //   } else {
+    //     noSleepSwitchElement.checked = data.switch_nosleep;
+    //   }
+    // });
 
-    noSleepSwitchElement.addEventListener("change", () => {
-      updateNoSleepStorage(noSleepSwitchElement.checked);
-    });
+    // noSleepSwitchElement.addEventListener("change", () => {
+    //   updateNoSleepStorage(noSleepSwitchElement.checked);
+    // });
 
     const now = new Date();
     const hours = now.getHours();
