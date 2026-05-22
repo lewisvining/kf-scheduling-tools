@@ -211,8 +211,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
                   <div class="modal-body" style="text-align: centre;">
-                    <div class="form-inline">
-                      <form style="display:none;">
+                    <div class="form-inline d-none">
+                      <form>
                         <label for="modeSelect" class="form-label k-text">Product mode</label>
                         <div class="mb-3 btn-sm">
                           <select id="modeSelect" class="form-select k-text">
@@ -242,34 +242,24 @@
                           <input class="form-check-input" type="checkbox" role="switch" id="utilSheetDataSwitch">
                           <label class="form-check-label k-text" for="utilSheetDataSwitch">Automatically fill in additional fields for the Utilisation sheet</label>
                         </div>
-                        <!-- <b class="k-text">Miscellaneous</b>
+                        <b class="k-text">Miscellaneous</b>
                         <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" role="switch" id="hideMasqueradeBarSwitch" style="margin-top: 6.5px;">
+                          <label class="form-check-label k-text" for="hideMasqueradeBarSwitch">Hide masquerade bar [Operations Admin]</label>
+                        </div>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" role="switch" id="injectCopyButtonsForJobsSwitch" style="margin-top: 6.5px;">
+                          <label class="form-check-label k-text" for="injectCopyButtonsForJobsSwitch">Enable copy buttons on jobs pages</label>
+                        </div>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" role="switch" id="injectC2CScheduling" style="margin-top: 6.5px;">
+                          <label class="form-check-label k-text" for="injectC2CScheduling">Enable click-to-copy on engineer names & home postcodes on scheduling page</label>
+                        </div>
+                        <div class="form-check form-switch d-none">
                           <input class="form-check-input" type="checkbox" role="switch" id="noSleepSwitch" style="margin-top: 6.5px;">
                           <label class="form-check-label k-text" for="noSleepSwitch">Keep display on</label>
-                        </div> -->
-                        <!-- <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" disabled>
-                          <label class="form-check-label k-text" for="flexSwitchCheckDefault">Exclude NBSIs & on site re-raises</label>
-                        </div> -->
-                      </form>
-                      <!--<form class="form-inline">
-                        <b class="k-text">Kraken</b>
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
-                          <label class="form-check-label k-text" for="flexSwitchCheckDefault">Automatically fill in the credit fields on Kraken for GSOS</label>
-                        </div>
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault2" disabled>
-                          <label class="form-check-label k-text" for="flexSwitchCheckDefault2">Enable KF button on Kraken accounts</label>
                         </div>
                       </form>
-                      <form class="form-inline">
-                        <b class="k-text">Kraken Field</b>
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" disabled>
-                          <label class="form-check-label k-text" for="flexSwitchCheckDefault">Enable additional copy buttons on job cards</label>
-                        </div>
-                      </form>-->
                     </div>
                   </div>
                   <!--<div class="modal-footer">

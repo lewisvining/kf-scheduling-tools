@@ -83,8 +83,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
             } else {
-                document.getElementById('error').style.display = 'inline';
-                document.getElementById('openSettings').style.display = 'none';
+                //document.getElementById('error').style.display = 'inline';
+                //document.getElementById('openSettings').style.display = 'none';
                 document.getElementById('schedulingpage').style.display = 'none';
                 document.querySelector('button[data-bs-target="#multiPageCopyModal"]').style.display = 'none';
             }
@@ -143,31 +143,114 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStorage(utilSheetDataSwitchElement.checked);
     });
 
-    // const noSleepSwitchElement = document.getElementById("noSleepSwitch");
+    const noSleepSwitchElement = document.getElementById("noSleepSwitch");
 
-    // function updateNoSleepStorage(value) {
-    //   chrome.storage.local.set({ switch_nosleep: value }, () => {
-    //     console.log("switch_nosleep updated:", value);
-    //   });
+    function updateNoSleepStorage(value) {
+      chrome.storage.local.set({ switch_nosleep: value }, () => {
+        console.log("switch_nosleep updated:", value);
+      });
 
-    //   chrome.runtime.sendMessage({
-    //     type: "SET_NO_SLEEP",
-    //     enabled: value
-    //   });
-    // }
+      chrome.runtime.sendMessage({
+        type: "SET_NO_SLEEP",
+        enabled: value
+      });
+    }
 
-    // chrome.storage.local.get("switch_nosleep", (data) => {
-    //   if (data.switch_nosleep === undefined) {
-    //     updateNoSleepStorage(false);
-    //     noSleepSwitchElement.checked = false;
-    //   } else {
-    //     noSleepSwitchElement.checked = data.switch_nosleep;
-    //   }
-    // });
+    chrome.storage.local.get("switch_nosleep", (data) => {
+      if (data.switch_nosleep === undefined) {
+        updateNoSleepStorage(false);
+        noSleepSwitchElement.checked = false;
+      } else {
+        noSleepSwitchElement.checked = data.switch_nosleep;
+      }
+    });
 
-    // noSleepSwitchElement.addEventListener("change", () => {
-    //   updateNoSleepStorage(noSleepSwitchElement.checked);
-    // });
+    noSleepSwitchElement.addEventListener("change", () => {
+      updateNoSleepStorage(noSleepSwitchElement.checked);
+    });
+
+    const hideMasqueradeBarSwitchElement = document.getElementById("hideMasqueradeBarSwitch");
+
+    function updateMasqueradeBarStorage(value) {
+      chrome.storage.local.set({
+        switch_hideMasqueradeBar: value
+      });
+    }
+
+    chrome.storage.local.get("switch_hideMasqueradeBar", (data) => {
+      if (data.switch_hideMasqueradeBar === undefined) {
+        updateMasqueradeBarStorage(false);
+        hideMasqueradeBarSwitchElement.checked = false;
+      } else {
+        hideMasqueradeBarSwitchElement.checked = data.switch_hideMasqueradeBar;
+      }
+    });
+
+    hideMasqueradeBarSwitchElement.addEventListener("change", () => {
+      updateMasqueradeBarStorage(
+        hideMasqueradeBarSwitchElement.checked
+      );
+    });
+
+    const injectCopyButtonsSwitchElement = document.getElementById("injectCopyButtonsForJobsSwitch");
+
+    function updateInjectCopyButtonsStorage(value) {
+      chrome.storage.local.set(
+        { switch_injectCopyButtonsForJobs: value },
+        () => {
+          console.log("switch_injectCopyButtonsForJobs updated:", value);
+        }
+      );
+
+      chrome.runtime.sendMessage({
+        type: "TOGGLE_JOB_COPY_BUTTONS",
+        enabled: value
+      });
+    }
+
+    chrome.storage.local.get("switch_injectCopyButtonsForJobs", (data) => {
+      if (data.switch_injectCopyButtonsForJobs === undefined) {
+        updateInjectCopyButtonsStorage(false);
+        injectCopyButtonsSwitchElement.checked = false;
+      } else {
+        injectCopyButtonsSwitchElement.checked =
+          data.switch_injectCopyButtonsForJobs;
+      }
+    });
+
+    injectCopyButtonsSwitchElement.addEventListener("change", () => {
+      updateInjectCopyButtonsStorage(
+        injectCopyButtonsSwitchElement.checked
+      );
+    });
+
+    const injectC2CSchedulingElement = document.getElementById("injectC2CScheduling");
+
+    function updateInjectC2CStorage(value) {
+      chrome.storage.local.set(
+        { switch_injectC2CScheduling: value },
+        () => {
+          console.log("switch_injectC2CScheduling updated:", value);
+        }
+      );
+    }
+
+    chrome.storage.local.get("switch_injectC2CScheduling", (data) => {
+      if (data.switch_injectC2CScheduling === undefined) {
+        updateInjectC2CStorage(false);
+
+        injectC2CSchedulingElement.checked = false;
+      } else {
+        injectC2CSchedulingElement.checked =
+          data.switch_injectC2CScheduling;
+      }
+    });
+
+    injectC2CSchedulingElement.addEventListener("change", () => {
+      updateInjectC2CStorage(
+        injectC2CSchedulingElement.checked
+      );
+    });
 
     const now = new Date();
     const hours = now.getHours();

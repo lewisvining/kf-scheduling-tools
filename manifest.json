@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Kraken Field Scheduling Tools",
-  "version": "1.12",
+  "version": "2.0",
   "description": "@lewis.vining",
   "permissions": [
     "storage",
@@ -17,6 +17,17 @@
   "background": {
     "service_worker": "background.js" 
   },
+  "content_scripts": [
+    {
+      "matches": ["https://field.oes-prod.energy/*"],
+      "js": [
+        "hideMasquerade.js",
+        "jobCopyButtons.js",
+        "c2cScheduling.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icon.png"
