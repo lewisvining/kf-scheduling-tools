@@ -945,6 +945,8 @@ function copyJeopardyJobs(params) {
           return date.toLocaleDateString("en-GB", { weekday: "long" });
         }
 
+        const duplicateJobs = [];
+
         jobElements.forEach((jobElement) => {
           const id = jobElement.id;
           if (id?.startsWith("accordion-")) {
@@ -990,17 +992,37 @@ function copyJeopardyJobs(params) {
           const timeslotMatches = timeslotFilter === "all" || jobTimeSlot === "AM";
 
           if (copyAll || (jobTypeValid && dateMatches && timeslotMatches)) {
-            jobsData.push({
-              postcode: jobPostcode,
-              reference: jobRef,
-              jobtype: jobTitle,
-              date: jobDate,
-              timeslot: jobTimeSlot,
-              datetime: `${jobDate} ${jobTimeSlot}`,
-              skills: jobSkills || "",
-            });
+            const alreadyExists = jobsData.some(
+              job => job.reference === jobRef && job.date === jobDate
+            );
+
+            if (alreadyExists) {
+              duplicateJobs.push({
+                jobRef,
+                jobTitle,
+                jobDate
+              });
+            } else {
+              jobsData.push({
+                postcode: jobPostcode,
+                reference: jobRef,
+                jobtype: jobTitle,
+                date: jobDate,
+                timeslot: jobTimeSlot,
+                datetime: `${jobDate} ${jobTimeSlot}`,
+                skills: jobSkills || "",
+              });
+            }
           }
         });
+
+        if (duplicateJobs.length > 0) {
+          console.log(
+            `${duplicateJobs.length} duplicate job reference(s) skipped:`
+          );
+
+          console.table(duplicateJobs);
+        }
 
         if (jobsData.length === 0) {
           chrome.runtime.sendMessage({
@@ -1023,9 +1045,14 @@ function copyJeopardyJobs(params) {
             .map(job => `${job.postcode}\t${job.reference}\t${job.jobtype}\t${job.datetime}\t${job.skills}`)
             .join('\n');
           copyToClipboardFallback(jobDataText);
+          const message =
+            duplicateJobs.length > 0
+              ? `${jobsData.length} job(s) copied to clipboard. Duplicate${duplicateJobs.length === 1 ? '' : 's'} skipped (details in console).`
+              : `${jobsData.length} job(s) copied to clipboard.`;
+
           chrome.runtime.sendMessage({
             type: 'SHOW_TOAST',
-            message: `${jobsData.length} job(s) copied to clipboard.`,
+            message,
             toastType: 'success',
             closeModal: true
           });
